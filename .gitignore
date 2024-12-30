@@ -1,0 +1,10 @@
+/cat_files.sh
+/frontend/node_modules
+/frontend/public
+/frontend/package-lock.json
+/backend/.venv
+/backend/__pycache__
+/backend/logs
+/backend/output.txt
+/frontend/output.txt
+/frontend/.env

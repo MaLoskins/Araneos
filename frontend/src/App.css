@@ -1,0 +1,486 @@
+:root {
+  --background-color: #2E2E38;
+  --primary-color: #1f1f1f;
+  --secondary-color: #1e1e1e;
+  --accent-color: #bb86fc;
+  --text-color: #ffffff;
+  --secondary-text-color: #bbbbbb;
+  --border-color: #333333;
+  --button-background: #bb86fc;
+  --button-hover: #985eff;
+  --modal-background: #1f1f1f;
+  --dropzone-border: #444444;
+  --dropzone-background: #1f1f1f;
+  --dropzone-active-background: #2c2c2c;
+  --input-background: #2c2c2c;
+  --input-text-color: #ffffff;
+  --button-text-color: #ffffff;
+}
+
+/* Global Styles */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+h1, h2, h3 {
+  color: var(--accent-color);
+  text-align: center;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.accent-text-center {
+  text-align: center;
+  color: var(--accent-color);
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 90px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  padding: 0 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.app-header:hover {
+  background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+}
+
+.logo-container {
+  position: absolute;
+  left: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.app-logo {
+  height: 50px;
+  margin-right: 15px;
+}
+
+.app-name {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.nav-link {
+  margin-left: 15px;
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 1.1em;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  background: var(--accent-color);
+  left: 0;
+  bottom: -5px;
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+  color: var(--accent-color);
+}
+
+.nav-link:hover::after,
+.active-link::after {
+  width: 100%;
+}
+
+.active-link {
+  color: var(--accent-color);
+}
+
+/* Main Layout (Sidebar + Content) */
+.main-layout {
+  display: flex;
+  flex: 1;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 400px;
+  background: var(--primary-color);
+  border-right: 1px solid var(--border-color);
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: 600;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Configuration Panel */
+.config-section {
+  width: 78%;
+  background: var(--primary-color);
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  margin: 20px auto;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.config-section h2 {
+  margin-top: 0;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.node-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.node-selector {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.node-selector input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-color);
+}
+
+.node-selector label {
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.config-section button {
+  background: var(--button-background);
+  color: var(--button-text-color);
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: background 0.3s;
+  display: block;
+  margin: 0 auto;
+}
+
+.config-section button:hover {
+  background: var(--button-hover);
+}
+
+.config-section button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+/* File Uploader */
+.file-uploader {
+  width: 80%;
+  margin: 20px auto;
+}
+
+.dropzone {
+  border: 2px dashed var(--dropzone-border);
+  background: var(--dropzone-background);
+  padding: 40px;
+  text-align: center;
+  border-radius: 8px;
+  transition: background 0.3s, border-color 0.3s;
+  color: var(--secondary-text-color);
+  cursor: pointer;
+}
+
+.dropzone.active {
+  background: var(--dropzone-active-background);
+  border-color: var(--accent-color);
+}
+
+.dropzone p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* Graph Visualization */
+.graph-section {
+  width: 80%;
+  margin-top: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--primary-color);
+  padding: 20px;
+  box-sizing: border-box;
+  margin: 20px auto;
+}
+
+.graph-section h2 {
+  margin-top: 0;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.graph-container {
+  width: 100%;
+  height: 600px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--background-color);
+  border-radius: 5px;
+}
+
+/* Modals */
+.node-edit-modal,
+.relationship-modal {
+  background: var(--modal-background);
+  color: var(--text-color);
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+  outline: none;
+  position: relative;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  background: var(--input-background);
+  color: var(--input-text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-buttons button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  background: var(--button-background);
+  color: var(--button-text-color);
+}
+
+.modal-buttons button:hover {
+  background: var(--button-hover);
+}
+
+.reopen-flow-btn {
+  width: 15%;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background-color: var(--accent-color);
+  color: var(--button-text-color);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Feature Configuration */
+.feature-config {
+  margin-top: 20px;
+}
+
+.feature-config h3 {
+  color: var(--accent-color);
+  margin-bottom: 10px;
+}
+
+.feature-config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+  background: var(--secondary-color);
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.feature-config-item label {
+  font-weight: 500;
+}
+
+.feature-config-item input,
+.feature-config-item select {
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--input-background);
+  color: var(--input-text-color);
+}
+
+.add-feature-btn {
+  background: var(--button-background);
+  color: var(--button-text-color);
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: background 0.3s;
+  margin-top: 10px;
+  display: block;
+  margin-left: auto;
+}
+
+.add-feature-btn:hover {
+  background: var(--button-hover);
+}
+
+.remove-feature-btn {
+  background: #ff4d4d;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 4px;
+  align-self: flex-end;
+}
+
+
+/* Info Modal specific styling */
+.info-modal-content {
+  max-width: 500px;
+  background: var(--modal-background);
+  color: var(--text-color);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 0 auto;
+  outline: none;
+}
+
+.info-modal-title {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+  color: var(--accent-color);
+}
+
+.info-modal-description p,
+.info-modal-description ul {
+  margin: 0.5em 0;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.info-modal-description ul {
+  list-style: disc;
+  margin-left: 1.5em;
+}
+
+/* Buttons spacing improvement */
+.add-feature-btn {
+  margin-right: 10px; /* Put some space between add feature and process graph */
+}
+
+.config-section button {
+  margin-bottom: 8px; /* extra spacing at bottom so they're not so close */
+}
+
+/* Apply the same color variables to MUI Accordions inside the sidebar */
+.sidebar .MuiAccordion-root {
+  background-color: var(--primary-color) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+  margin-bottom: 10px;
+}
+
+.sidebar .MuiAccordionSummary-root,
+.sidebar .MuiAccordionSummary-content,
+.sidebar .MuiAccordionSummary-expandIconWrapper svg {
+  color: var(--text-color) !important;
+}
+
+.sidebar .MuiAccordionDetails-root {
+  background-color: var(--secondary-color) !important;
+  color: var(--text-color) !important;
+}
+
+
