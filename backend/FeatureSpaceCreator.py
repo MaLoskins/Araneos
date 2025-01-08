@@ -266,45 +266,6 @@ class EmbeddingCreator:
         return np.array(averaged_embeddings)
 
 
-class FeatureAggregatorSimple(nn.Module):
-    def __init__(
-        self,
-        sentence_dim: int,
-        categorical_columns: List[str],
-        categorical_dims: Dict[str, int],
-        categorical_embed_dim: int
-    ):
-        super(FeatureAggregatorSimple, self).__init__()
-        self.categorical_columns = categorical_columns
-        self.categorical_dims = categorical_dims
-        self.categorical_embed_dim = categorical_embed_dim
-
-        self.embeddings = nn.ModuleDict({
-            col: nn.Embedding(num_embeddings=dim, embedding_dim=categorical_embed_dim)
-            for col, dim in categorical_dims.items()
-        })
-
-        self.sentence_projection = nn.Linear(sentence_dim, sentence_dim)
-        self.categorical_projection = nn.Linear(categorical_embed_dim, sentence_dim)
-        self.weights = {col: 1.0 for col in categorical_columns}
-
-    def set_categorical_weights(self, weights: Dict[str, float]):
-        self.weights = weights
-
-    def forward(self, sentence_embeddings: torch.Tensor, categorical_data: Dict[str, torch.Tensor]) -> torch.Tensor:
-        aggregated_features = self.sentence_projection(sentence_embeddings)
-
-        for col in self.categorical_columns:
-            if col in categorical_data:
-                embedded = self.embeddings[col](categorical_data[col])
-                embedded = self.categorical_projection(embedded)
-                weight = self.weights.get(col, 1.0)
-                aggregated_features += weight * embedded
-
-        aggregated_features = torch.relu(aggregated_features)
-        return aggregated_features
-
-
 class FeatureSpaceCreator:
     def __init__(self, config: Dict[str, Any], device: str = "cuda", log_file: str = "logs/feature_space_creator.log"):
         self.config = config
@@ -523,48 +484,3 @@ class FeatureSpaceCreator:
 
         self.logger.info("Feature space creation completed.")
         return feature_space
-
-    def aggregate_features(
-        self,
-        feature_space: pd.DataFrame,
-        categorical_columns: List[str],
-        categorical_dims: Dict[str, int],
-        sentence_dim: int = 768
-    ) -> torch.Tensor:
-        sentence_embedding_cols = [col for col in feature_space.columns if col.endswith("_embedding")]
-        if not sentence_embedding_cols:
-            raise ValueError("No sentence embedding columns found in feature_space.")
-        elif len(sentence_embedding_cols) > 1:
-            self.logger.warning(f"Multiple sentence embedding columns found: {sentence_embedding_cols}. Using the first one.")
-
-        sentence_col = sentence_embedding_cols[0]
-        sentence_embeddings = torch.tensor(feature_space[sentence_col].tolist(), dtype=torch.float32).to(self.device)
-
-        categorical_data = {}
-        for col in categorical_columns:
-            if col not in feature_space.columns:
-                raise ValueError(f"Categorical column '{col}' not found in feature_space.")
-            cat_values = feature_space[col].values
-            max_index = cat_values.max()
-            if max_index >= categorical_dims[col]:
-                raise ValueError(f"Categorical column '{col}' has index {max_index} "
-                                 f"which exceeds its dimension {categorical_dims[col]}.")
-            categorical_data[col] = torch.tensor(cat_values, dtype=torch.long).to(sentence_embeddings.device)
-
-        aggregator = FeatureAggregatorSimple(
-            sentence_dim=sentence_dim,
-            categorical_columns=categorical_columns,
-            categorical_dims=categorical_dims,
-            categorical_embed_dim=sentence_dim
-        ).to(sentence_embeddings.device)
-
-        weights_dict = {col: 1.0 for col in categorical_columns}
-        aggregator.set_categorical_weights(weights_dict)
-
-        aggregator.eval()
-
-        with torch.no_grad():
-            final_features = aggregator(sentence_embeddings, categorical_data)
-
-        self.logger.info("Aggregated features successfully.")
-        return final_features

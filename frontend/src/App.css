@@ -388,11 +388,12 @@ h1, h2, h3 {
 
 .feature-config-item input,
 .feature-config-item select {
-  padding: 8px;
+  padding: 6px;
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: 20px;
   background: var(--input-background);
   color: var(--input-text-color);
+  margin: 2px ;
 }
 
 .add-feature-btn {
@@ -482,5 +483,6 @@ h1, h2, h3 {
   background-color: var(--secondary-color) !important;
   color: var(--text-color) !important;
 }
+
 
 
