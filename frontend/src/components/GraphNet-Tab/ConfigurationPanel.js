@@ -1,7 +1,7 @@
 // src/components/GraphNet-Tab/ConfigurationPanel.js
 import React, { useState } from 'react';
-import InfoButton from '../InfoButton';  // <-- import
-import sectionsInfo from '../../sectionsInfo';         // <-- import
+import InfoButton from '../InfoButton';
+import sectionsInfo from '../../sectionsInfo';
 
 const ConfigurationPanel = ({
   columns,
@@ -14,15 +14,14 @@ const ConfigurationPanel = ({
   featureConfigs,
   setFeatureConfigs
 }) => {
-  // We add a small snippet so the user can pick "which node ID column" the feature should attach to.
-  // For example, if the user wants "text" embeddings to attach to the "tweet_id" node.
+  // Add new features to the config
   const addFeature = () => {
     setFeatureConfigs([
       ...featureConfigs,
       {
-        node_id_column: '',      // <--- new
-        column_name: '',         // e.g. "text"
-        type: 'text',            // text or numeric
+        node_id_column: '',
+        column_name: '',
+        type: 'text',
         embedding_method: 'bert',
         embedding_dim: 768,
         additional_params: {},
@@ -72,7 +71,6 @@ const ConfigurationPanel = ({
         ))}
       </div>
 
-
       <hr style={{ margin: '20px 0' }} />
 
       <div style={{ textAlign: 'center', marginBottom: '15px' }}>
@@ -104,6 +102,7 @@ const ConfigurationPanel = ({
               >
                 Remove
               </button>
+
               <label>
                 Node ID Column:
                 <select
@@ -115,7 +114,9 @@ const ConfigurationPanel = ({
                 >
                   <option value="">--Select--</option>
                   {columns.map((col) => (
-                    <option key={col} value={col}>{col}</option>
+                    <option key={col} value={col}>
+                      {col}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -131,7 +132,9 @@ const ConfigurationPanel = ({
                 >
                   <option value="">--Select--</option>
                   {columns.map((col) => (
-                    <option key={col} value={col}>{col}</option>
+                    <option key={col} value={col}>
+                      {col}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -163,6 +166,7 @@ const ConfigurationPanel = ({
                       <option value="word2vec">Word2Vec</option>
                     </select>
                   </label>
+
                   <label>
                     Embedding Dimension:
                     <input
@@ -177,6 +181,7 @@ const ConfigurationPanel = ({
                       max="2048"
                     />
                   </label>
+
                   {feature.embedding_method === 'glove' && (
                     <label>
                       GloVe Cache Path:
@@ -194,6 +199,7 @@ const ConfigurationPanel = ({
                       />
                     </label>
                   )}
+
                   {feature.embedding_method === 'word2vec' && (
                     <label>
                       Word2Vec Model Path:
@@ -210,25 +216,45 @@ const ConfigurationPanel = ({
                       />
                     </label>
                   )}
+
                   {feature.embedding_method === 'bert' && (
-                    <label>
-                      BERT Model Name:
-                      <input
-                        type="text"
-                        value={
-                          feature.additional_params.bert_model_name ||
-                          'bert-base-uncased'
-                        }
-                        onChange={(e) =>
-                          updateFeature(index, 'additional_params', {
-                            ...feature.additional_params,
-                            bert_model_name: e.target.value
-                          })
-                        }
-                        placeholder="e.g., bert-base-uncased"
-                        required
-                      />
-                    </label>
+                    <>
+                      <label>
+                        BERT Model Name:
+                        <input
+                          type="text"
+                          value={
+                            feature.additional_params.bert_model_name ||
+                            'bert-base-uncased'
+                          }
+                          onChange={(e) =>
+                            updateFeature(index, 'additional_params', {
+                              ...feature.additional_params,
+                              bert_model_name: e.target.value
+                            })
+                          }
+                          placeholder="e.g., bert-base-uncased"
+                          required
+                        />
+                      </label>
+
+                      <label>
+                        BERT Batch Size (optional):
+                        <input
+                          type="number"
+                          min="1"
+                          max="512"
+                          value={feature.additional_params.bert_batch_size || ''}
+                          onChange={(e) =>
+                            updateFeature(index, 'additional_params', {
+                              ...feature.additional_params,
+                              bert_batch_size: parseInt(e.target.value) || 1
+                            })
+                          }
+                          placeholder="e.g., 16"
+                        />
+                      </label>
+                    </>
                   )}
                 </>
               )}
@@ -248,6 +274,7 @@ const ConfigurationPanel = ({
                       <option value="int">Integer</option>
                     </select>
                   </label>
+
                   <label>
                     Processing:
                     <select
@@ -261,6 +288,7 @@ const ConfigurationPanel = ({
                       <option value="normalize">Normalize</option>
                     </select>
                   </label>
+
                   <label>
                     Projection Method:
                     <select
@@ -276,6 +304,7 @@ const ConfigurationPanel = ({
                       <option value="linear">Linear</option>
                     </select>
                   </label>
+
                   {feature.projection.method === 'linear' && (
                     <label>
                       Target Dimension:
@@ -299,18 +328,18 @@ const ConfigurationPanel = ({
               )}
             </div>
           ))}
+
           <button
             type="button"
             className="add-feature-btn"
             onClick={addFeature}
-            style={{ marginRight: 'auto' }} // add some space on the left
+            style={{ marginRight: 'auto' }}
           >
             Add Feature
           </button>
         </div>
       )}
 
-      {/* Add some spacing between "Add Feature" & "Process Graph" */}
       <div style={{ marginTop: '10px' }}>
         <button
           onClick={onSubmit}

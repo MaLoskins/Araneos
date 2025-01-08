@@ -11,6 +11,7 @@ from torchtext.vocab import GloVe
 from transformers import BertModel, BertTokenizerFast
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
+from math import ceil
 from umap import UMAP
 import warnings
 import logging
@@ -215,6 +216,27 @@ class EmbeddingCreator:
             cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().cpu().numpy()
         return cls_embedding
 
+    def _get_bert_embedding_batch(self, list_of_token_lists: List[List[str]]) -> np.ndarray:
+        """
+        Batch process multiple tokenized rows with BERT, returning
+        an array of shape (batch_size, hidden_size).
+        Each row's embedding is the [CLS] token from BERT.
+        """
+        texts = [' '.join(tokens) for tokens in list_of_token_lists]
+        inputs = self.tokenizer(
+            texts,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,
+            max_length=512
+        ).to(self.device)
+
+        with torch.no_grad():
+            outputs = self.bert_model(**inputs)
+            cls_embeddings = outputs.last_hidden_state[:, 0, :].cpu().numpy()
+
+        return cls_embeddings
+
     def _get_bert_word_embeddings(self, tokens: List[str]) -> np.ndarray:
         inputs = self.tokenizer(
             tokens,
@@ -401,21 +423,38 @@ class FeatureSpaceCreator:
             processed_df = self.text_preprocessor.clean_text(df)
             tokens = processed_df["tokenized_text"].tolist()
 
+            # If Word2Vec without a pre-trained model path, we train on the fly
             if feature["embedding_method"].lower() == "word2vec":
                 word2vec_model_path = feature.get("additional_params", {}).get("word2vec_model_path", None)
                 if not word2vec_model_path:
                     self.logger.info(f"Training Word2Vec model for '{col}' as no model path was provided.")
                     self.embedding_creators[col].train_word2vec(sentences=tokens)
                     self.logger.info(f"Word2Vec model trained for '{col}'.")
-                else:
-                    pass
 
-            embeddings = []
-            for token_list in tokens:
-                embedding = self.embedding_creators[col].get_embedding(token_list)
-                embeddings.append(embedding)
+            # BERT BATCHING:
+            method = feature["embedding_method"].lower()
+            bert_batch_size = 1
+            if method == "bert":
+                bert_batch_size = feature.get("additional_params", {}).get("bert_batch_size", 1)
 
-            embeddings_array = np.vstack(embeddings)
+            if method == "bert" and bert_batch_size > 1:
+                self.logger.info(f"Using batched BERT embeddings for '{col}' with batch size={bert_batch_size}.")
+                embeddings = []
+                total_rows = len(tokens)
+                # chunk tokens by batch_size
+                for i in range(0, total_rows, bert_batch_size):
+                    batch_chunk = tokens[i : i + bert_batch_size]
+                    embeddings_chunk = self.embedding_creators[col]._get_bert_embedding_batch(batch_chunk)
+                    embeddings.append(embeddings_chunk)
+                embeddings_array = np.vstack(embeddings)
+            else:
+                # fallback: row-by-row embedding
+                embeddings = []
+                for token_list in tokens:
+                    embedding = self.embedding_creators[col].get_embedding(token_list)
+                    embeddings.append(embedding)
+                embeddings_array = np.vstack(embeddings)
+
             self.logger.info(f"Generated embeddings for text column '{col}' with shape {embeddings_array.shape}.")
 
             dim_reduction_config = feature.get("dim_reduction", {})
