@@ -107,11 +107,11 @@ tbb==2021.11.0
 thinc==8.2.5
 threadpoolctl==3.5.0
 tokenizers==0.20.1
-#torch==2.3.0+cu118
+# torch==2.3.0+cu118
 torch-geometric==2.6.1
-#torchaudio==2.3.0+cu118
+# torchaudio==2.3.0+cu118
 torchtext==0.18.0
-#torchvision==0.18.0+cu118
+# torchvision==0.18.0+cu118
 tqdm==4.66.6
 traitlets==5.14.3
 transformers==4.46.1

@@ -69,42 +69,50 @@ def process_data(req: ProcessDataRequest):
         for feat in user_features:
             node_id_col = feat.get("node_id_column")
             col_name = feat.get("column_name")
+            feat_type = feat.get("type", "text").lower()
+
             if not node_id_col or not col_name:
                 logger.warning(f"Skipping feature {feat} because node_id_column or column_name is missing.")
                 continue
 
-            # 1) Ensure the node_id_column is present in feature_data
-            if node_id_col not in feature_data.columns:
-                # also check if it's in df
-                if node_id_col not in df.columns:
-                    logger.error(f"Column '{node_id_col}' does not exist in CSV. Cannot attach embeddings.")
-                    continue  # or raise an Exception
-                feature_data[node_id_col] = df[node_id_col]  # copy from original df
+            # If it's a text feature, the column is named <col>_embedding
+            # If numeric, the column is named <col>_feature
+            if feat_type == "numeric":
+                feature_col_name = f"{col_name}_feature"
+            else:
+                feature_col_name = f"{col_name}_embedding"
 
-            # 2) Check if we have the embedding column
-            embedding_col_name = f"{col_name}_embedding"
-            if embedding_col_name not in feature_data.columns:
-                logger.warning(f"Embedding column '{embedding_col_name}' not found in feature_data. Skipping.")
+            if feature_col_name not in feature_data.columns:
+                logger.warning(f"Feature column '{feature_col_name}' not found in feature_data. Skipping.")
                 continue
 
-            # 3) Attach embeddings to the correct node in graph_data
+            # Ensure the node_id_column is in feature_data
+            if node_id_col not in feature_data.columns:
+                if node_id_col not in df.columns:
+                    logger.error(f"Column '{node_id_col}' does not exist in CSV. Cannot attach features.")
+                    continue
+                feature_data[node_id_col] = df[node_id_col]
+
+            # Attach the feature to the correct node in graph_data
             for idx, row in feature_data.iterrows():
-                node_id_value = row[node_id_col]  # now safe, because we guaranteed it exists
+                node_id_value = row[node_id_col]
                 if pd.isnull(node_id_value):
                     continue
                 node_id_str = str(node_id_value)
 
-                embedding_val = row[embedding_col_name]
-                if isinstance(embedding_val, np.ndarray):
-                    embedding_val = embedding_val.tolist()
+                val = row[feature_col_name]
+                # If it's a numpy array, convert to list
+                if isinstance(val, np.ndarray):
+                    val = val.tolist()
 
                 # find the node in graph_data
                 for n in graph_data["nodes"]:
                     if str(n["id"]) == node_id_str:
                         if "features" not in n:
                             n["features"] = {}
-                        n["features"][embedding_col_name] = embedding_val
+                        n["features"][feature_col_name] = val
                         break
+
 
 
         logger.info("Feature embeddings attached to graph nodes.")
