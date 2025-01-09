@@ -16,18 +16,14 @@ import sectionsInfo from '../../sectionsInfo';
 function isFeatureComplete(feature) {
   const { node_id_column, column_name, type } = feature;
   if (!node_id_column || !column_name || !type) return false;
-
-  // optional deeper checks
   if (type === 'text' && !feature.embedding_dim) return false;
-
-  // all checks passed
   return true;
 }
 
 const ConfigurationPanel = ({
   columns,
   onSelectNode,
-  onSubmit,
+  onSubmit, // function(labelColumn)
   loading,
   selectedNodes,
   useFeatureSpace,
@@ -35,14 +31,14 @@ const ConfigurationPanel = ({
   featureConfigs,
   setFeatureConfigs
 }) => {
-  // Local state that tracks which features are in "edit mode"
-  // e.g., expandedIndices[i] = true => user sees the full edit form for feature i
+  // Local state for “expanded” feature panels
   const [expandedIndices, setExpandedIndices] = useState(
     featureConfigs.map(() => true)
   );
 
-  // Re-init expandedIndices if featureConfigs changes length
-  // (This ensures newly added features start expanded)
+  // Local state for chosen label column
+  const [labelColumn, setLabelColumn] = useState('');
+
   React.useEffect(() => {
     if (expandedIndices.length < featureConfigs.length) {
       setExpandedIndices((prev) => [
@@ -52,7 +48,6 @@ const ConfigurationPanel = ({
     }
   }, [featureConfigs, expandedIndices]);
 
-  // Toggle a feature’s “edit mode”
   const toggleExpand = (index) => {
     setExpandedIndices((prev) => {
       const updated = [...prev];
@@ -61,7 +56,6 @@ const ConfigurationPanel = ({
     });
   };
 
-  // Add new feature
   const addFeature = () => {
     setFeatureConfigs((prev) => [
       ...prev,
@@ -77,20 +71,16 @@ const ConfigurationPanel = ({
         projection: {},
       },
     ]);
-    // Expand the new feature
     setExpandedIndices((prev) => [...prev, true]);
   };
 
-  // Remove feature
   const removeFeature = (index) => {
     const updated = featureConfigs.filter((_, i) => i !== index);
     setFeatureConfigs(updated);
-
     const updatedExpanded = expandedIndices.filter((_, i) => i !== index);
     setExpandedIndices(updatedExpanded);
   };
 
-  // Update a field
   const updateFeature = (index, key, value) => {
     const updated = featureConfigs.map((feature, i) => {
       if (i === index) {
@@ -101,8 +91,7 @@ const ConfigurationPanel = ({
     setFeatureConfigs(updated);
   };
 
-  // Renders a short summary if the feature is “complete”
-  const renderFeatureSummary = (feature, index) => {
+  function renderFeatureSummary(feature, index) {
     const {
       node_id_column,
       column_name,
@@ -111,7 +100,7 @@ const ConfigurationPanel = ({
       embedding_dim,
       data_type,
       processing,
-      projection,
+      projection
     } = feature;
 
     return (
@@ -126,52 +115,36 @@ const ConfigurationPanel = ({
       >
         <strong>Feature {index + 1}</strong>
         <div style={{ marginTop: '6px' }}>
-          <p style={{ margin: '4px 0' }}>
-            <strong>Node ID:</strong> {node_id_column}
-          </p>
-          <p style={{ margin: '4px 0' }}>
-            <strong>Column:</strong> {column_name}
-          </p>
-          <p style={{ margin: '4px 0' }}>
-            <strong>Type:</strong> {type}
-          </p>
+          <p><strong>Node ID:</strong> {node_id_column}</p>
+          <p><strong>Column:</strong> {column_name}</p>
+          <p><strong>Type:</strong> {type}</p>
           {type === 'text' && (
-            <>
-              <p style={{ margin: '4px 0' }}>
-                <strong>Embedding:</strong> {embedding_method} ({embedding_dim}D)
-              </p>
-            </>
+            <p>
+              <strong>Embedding:</strong> {embedding_method} ({embedding_dim}D)
+            </p>
           )}
           {type === 'numeric' && (
             <>
-              <p style={{ margin: '4px 0' }}>
-                <strong>Data Type:</strong> {data_type}
-              </p>
-              <p style={{ margin: '4px 0' }}>
-                <strong>Processing:</strong> {processing}
-              </p>
-              <p style={{ margin: '4px 0' }}>
-                <strong>Projection:</strong>{' '}
-                {projection.method || 'none'}
+              <p><strong>Data Type:</strong> {data_type}</p>
+              <p><strong>Processing:</strong> {processing}</p>
+              <p>
+                <strong>Projection:</strong> {projection.method || 'none'}
               </p>
             </>
           )}
         </div>
       </div>
     );
-  };
+  }
 
-  // Renders the full edit form for a single feature
-  const renderEditForm = (feature, index) => {
+  function renderEditForm(feature, index) {
     return (
       <div style={{ fontSize: '0.85rem' }}>
         <label>
           Node ID Column:
           <select
             value={feature.node_id_column}
-            onChange={(e) =>
-              updateFeature(index, 'node_id_column', e.target.value)
-            }
+            onChange={(e) => updateFeature(index, 'node_id_column', e.target.value)}
             required
           >
             <option value="">--Select--</option>
@@ -187,9 +160,7 @@ const ConfigurationPanel = ({
           Feature Column Name:
           <select
             value={feature.column_name}
-            onChange={(e) =>
-              updateFeature(index, 'column_name', e.target.value)
-            }
+            onChange={(e) => updateFeature(index, 'column_name', e.target.value)}
             required
           >
             <option value="">--Select--</option>
@@ -212,7 +183,7 @@ const ConfigurationPanel = ({
           </select>
         </label>
 
-        {/* If text, choose embedding method */}
+        {/* text-based feature config */}
         {feature.type === 'text' && (
           <>
             <label>
@@ -228,7 +199,6 @@ const ConfigurationPanel = ({
                 <option value="word2vec">Word2Vec</option>
               </select>
             </label>
-
             <label>
               Embedding Dimension:
               <input
@@ -261,7 +231,6 @@ const ConfigurationPanel = ({
                 />
               </label>
             )}
-
             {feature.embedding_method === 'word2vec' && (
               <label>
                 Word2Vec Model Path:
@@ -278,17 +247,13 @@ const ConfigurationPanel = ({
                 />
               </label>
             )}
-
             {feature.embedding_method === 'bert' && (
               <>
                 <label>
                   BERT Model Name:
                   <input
                     type="text"
-                    value={
-                      feature.additional_params.bert_model_name ||
-                      'bert-base-uncased'
-                    }
+                    value={feature.additional_params.bert_model_name || 'bert-base-uncased'}
                     onChange={(e) =>
                       updateFeature(index, 'additional_params', {
                         ...feature.additional_params,
@@ -299,7 +264,6 @@ const ConfigurationPanel = ({
                     required
                   />
                 </label>
-
                 <label>
                   BERT Batch Size (optional):
                   <input
@@ -321,7 +285,7 @@ const ConfigurationPanel = ({
           </>
         )}
 
-        {/* If numeric, pick transformations */}
+        {/* numeric-based feature config */}
         {feature.type === 'numeric' && (
           <>
             <label>
@@ -336,7 +300,6 @@ const ConfigurationPanel = ({
                 <option value="int">Integer</option>
               </select>
             </label>
-
             <label>
               Processing:
               <select
@@ -350,7 +313,6 @@ const ConfigurationPanel = ({
                 <option value="normalize">Normalize</option>
               </select>
             </label>
-
             <label>
               Projection Method:
               <select
@@ -366,7 +328,6 @@ const ConfigurationPanel = ({
                 <option value="linear">Linear</option>
               </select>
             </label>
-
             {feature.projection.method === 'linear' && (
               <label>
                 Target Dimension:
@@ -390,11 +351,10 @@ const ConfigurationPanel = ({
         )}
       </div>
     );
-  };
+  }
 
   return (
     <div className="config-section">
-      {/* ---- Node Selection Accordion ---- */}
       <Accordion
         sx={{
           backgroundColor: 'var(--primary-color)',
@@ -439,6 +399,23 @@ const ConfigurationPanel = ({
 
           <hr style={{ margin: '20px 0' }} />
 
+          {/* Label Column Picker */}
+          <div style={{ marginBottom: '15px', textAlign: 'center' }}>
+            <label style={{ marginRight: '10px' }}>
+              Choose Label Column:&nbsp;
+              <select
+                value={labelColumn}
+                onChange={(e) => setLabelColumn(e.target.value)}
+                style={{ minWidth: '120px' }}
+              >
+                <option value="">--None--</option>
+                {columns.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
           <div style={{ textAlign: 'center', marginBottom: '15px' }}>
             <label style={{ marginRight: '10px' }}>
               <input
@@ -452,7 +429,6 @@ const ConfigurationPanel = ({
         </AccordionDetails>
       </Accordion>
 
-      {/* ---- Advanced Feature Creation Accordion ---- */}
       {useFeatureSpace && (
         <Accordion
           sx={{
@@ -475,13 +451,11 @@ const ConfigurationPanel = ({
               description={sectionsInfo.featureColumns.description}
             />
           </AccordionSummary>
-
           <AccordionDetails
             sx={{
               backgroundColor: 'var(--secondary-color)',
             }}
           >
-            {/* Multi-column grid for the feature items */}
             <div
               style={{
                 display: 'grid',
@@ -506,7 +480,6 @@ const ConfigurationPanel = ({
                       position: 'relative',
                     }}
                   >
-                    {/* Remove button in top-right corner */}
                     <button
                       type="button"
                       className="remove-feature-btn"
@@ -527,7 +500,6 @@ const ConfigurationPanel = ({
                       Remove
                     </button>
 
-                    {/* If complete and not expanded, show summary only */}
                     {complete && !expanded && (
                       <>
                         {renderFeatureSummary(feature, index)}
@@ -548,20 +520,14 @@ const ConfigurationPanel = ({
                         </button>
                       </>
                     )}
-
-                    {/* If incomplete or expanded, show the edit form */}
                     {(!complete || expanded) && (
                       <>
-                        {/* Conditionally render the summary if it's complete, 
-                            so user can see it alongside the form if you like. */}
                         {complete && (
                           <div style={{ marginBottom: '8px' }}>
                             {renderFeatureSummary(feature, index)}
                           </div>
                         )}
-
                         {renderEditForm(feature, index)}
-
                         <button
                           onClick={() => toggleExpand(index)}
                           style={{
@@ -583,7 +549,6 @@ const ConfigurationPanel = ({
                 );
               })}
             </div>
-
             <button
               type="button"
               className="add-feature-btn"
@@ -605,7 +570,6 @@ const ConfigurationPanel = ({
         </Accordion>
       )}
 
-      {/* ---- Process Graph Accordion ---- */}
       <Accordion
         sx={{
           backgroundColor: 'var(--primary-color)',
@@ -633,7 +597,7 @@ const ConfigurationPanel = ({
         >
           <div style={{ marginTop: '10px', textAlign: 'center' }}>
             <button
-              onClick={onSubmit}
+              onClick={() => onSubmit(labelColumn)}
               disabled={loading || selectedNodes.length === 0}
               style={{ marginTop: '10px' }}
             >

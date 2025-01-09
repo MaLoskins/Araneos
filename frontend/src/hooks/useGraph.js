@@ -1,3 +1,4 @@
+// src/hooks/useGraph.js
 import { useState } from 'react';
 import { processData } from '../api';
 import { useNodesState, useEdgesState, addEdge } from 'react-flow-renderer';
@@ -9,8 +10,7 @@ const useGraph = () => {
     nodes: [],
     relationships: [],
     graph_type: 'directed',
-    // We'll store feature definitions under config.features
-    features: []
+    features: [],
   });
 
   const [graphData, setGraphData] = useState(null);
@@ -25,11 +25,7 @@ const useGraph = () => {
   const [relationshipModalIsOpen, setRelationshipModalIsOpen] = useState(false);
   const [currentEdge, setCurrentEdge] = useState(null);
 
-  // Toggle for advanced feature creation
   const [useFeatureSpace, setUseFeatureSpace] = useState(false);
-
-  // This is the local list of “features” (embedding definitions).
-  // We’ll place them in config.features when calling handleSubmit.
   const [featureConfigs, setFeatureConfigs] = useState([]);
 
   const handleFileDrop = (data, fields) => {
@@ -54,27 +50,21 @@ const useGraph = () => {
     setUseFeatureSpace((prev) => !prev);
   };
 
-  // The user checks/unchecks a column to become a node.
   const handleSelectNode = (column) => {
     const alreadySelected = config.nodes.find((n) => n.id === column);
     if (alreadySelected) {
-      // remove from config
       setConfig((prev) => ({
         ...prev,
         nodes: prev.nodes.filter((n) => n.id !== column)
       }));
-      // remove from React Flow
       setNodes((ns) => ns.filter((n) => n.id !== column));
       setEdges((es) => es.filter((e) => e.source !== column && e.target !== column));
     } else {
-      // add to config
       const newNode = { id: column, type: 'default', features: {} };
       setConfig((prev) => ({
         ...prev,
         nodes: [...prev.nodes, newNode]
       }));
-
-      // add to React Flow
       setNodes((ns) => [
         ...ns,
         {
@@ -91,17 +81,14 @@ const useGraph = () => {
     }
   };
 
-  // Called when the user connects two nodes in React Flow, so we define a relationship type
   const onConnectHandler = (connection) => {
     setCurrentEdge(connection);
     setRelationshipModalIsOpen(true);
   };
 
-  // Called from RelationshipModal
   const onSaveRelationship = ({ relationshipType }) => {
     if (!currentEdge) return;
 
-    // Add edge in React Flow
     const newEdge = {
       ...currentEdge,
       label: relationshipType,
@@ -109,7 +96,6 @@ const useGraph = () => {
     };
     setEdges((eds) => addEdge(newEdge, eds));
 
-    // Add to config.relationships
     setConfig((prev) => ({
       ...prev,
       relationships: [
@@ -126,14 +112,12 @@ const useGraph = () => {
     setCurrentEdge(null);
   };
 
-  // Node click
   const onNodeClickHandler = (event, node) => {
     setCurrentNode(node);
     setNodeEditModalIsOpen(true);
   };
 
   const handleSaveNodeEdit = ({ nodeType, nodeFeatures }) => {
-    // For demonstration, we only store a "type" string, plus "features"
     setConfig((prev) => {
       const newNodes = prev.nodes.map((n) => {
         if (n.id === currentNode.id) {
@@ -148,7 +132,6 @@ const useGraph = () => {
       return { ...prev, nodes: newNodes };
     });
 
-    // Also update React Flow nodes
     setNodes((ns) =>
       ns.map((nd) => {
         if (nd.id === currentNode.id) {
@@ -167,8 +150,8 @@ const useGraph = () => {
     setCurrentNode(null);
   };
 
-  // When user hits "Process Graph"
-  const handleSubmit = async () => {
+  // Accept labelColumn from caller
+  const handleSubmit = async (labelColumn) => {
     if (!csvData.length || !config.nodes.length) {
       alert('Please upload CSV and select at least one node.');
       return;
@@ -176,24 +159,20 @@ const useGraph = () => {
 
     setLoading(true);
     try {
-      // Attach the local featureConfigs into config.features
-      // so the backend knows which columns to embed.
       const extendedConfig = {
         ...config,
-        features: featureConfigs, // put them here
+        features: featureConfigs,
         use_feature_space: useFeatureSpace,
         feature_space_config: useFeatureSpace
-          ? {
-              features: featureConfigs
-            }
-          : {}
+          ? { features: featureConfigs }
+          : {},
+        label_column: labelColumn || ''
       };
 
       const response = await processData(csvData, extendedConfig);
       setGraphData(response.graph || null);
 
       if (response.featureDataCsv) {
-        // optional download logic
         console.log('Received featureDataCsv from server', response.featureDataCsv.length, 'characters');
       }
     } catch (err) {

@@ -10,7 +10,6 @@ import InfoButton from '../InfoButton';
 import sectionsInfo from '../../sectionsInfo';
 
 function GraphNet(props) {
-  // Instead of destructuring from useGraph, destructure from props
   const {
     columns,
     graphData,
@@ -49,8 +48,8 @@ function GraphNet(props) {
         <ConfigurationPanel
           columns={columns}
           onSelectNode={handleSelectNode}
-          onSubmit={async () => {
-            await handleSubmit();
+          onSubmit={async (labelCol) => {
+            await handleSubmit(labelCol);
             setShowReactFlow(false);
           }}
           loading={loading}
@@ -91,9 +90,7 @@ function GraphNet(props) {
         </>
       )}
 
-      {graphData && (
-        <GraphVisualizer graphData={graphData} />
-      )}
+      {graphData && <GraphVisualizer graphData={graphData} />}
 
       {currentNode && (
         <NodeEditModal
