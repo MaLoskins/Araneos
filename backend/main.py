@@ -35,18 +35,16 @@ def process_data(req: ProcessDataRequest):
     df = pd.DataFrame(req.data)
     config = req.config
 
-    # Extract normal graph config
     nodes_config = config.get("nodes", [])
     relationships = config.get("relationships", [])
     graph_type = config.get("graph_type", "directed")
+    label_column = config.get("label_column", "")
 
-    # If advanced feature creation is requested
     use_feature_space = config.get("use_feature_space", False)
     feature_space_config = config.get("feature_space_config", {})
-    # The user’s feature definitions (including node_id_column, column_name, etc.)
     user_features = config.get("features", [])
 
-    # 1) Create a normal graph from the node/relationship config
+    # 1) Build the initial graph
     graph_config = {
         "nodes": nodes_config,
         "relationships": relationships,
@@ -56,56 +54,56 @@ def process_data(req: ProcessDataRequest):
     graph = df_to_graph.get_graph()
     graph_data = json_graph.node_link_data(graph)
 
-    # 2) If user wants embeddings, process them
+    # 2) Attach the user-chosen label if label_column is valid
+    if label_column and label_column in df.columns:
+        for node_info in graph_data["nodes"]:
+            node_id = str(node_info["id"])
+            for nc in nodes_config:
+                node_id_col = nc["id"]
+                matching_rows = df.loc[df[node_id_col].astype(str) == node_id]
+                if not matching_rows.empty:
+                    label_val = matching_rows[label_column].values[0]
+                    if "features" not in node_info:
+                        node_info["features"] = {}
+                    node_info["features"]["label"] = str(label_val)
+                    break
+
+    # 3) If user wants embeddings
     feature_data = None
     if use_feature_space and feature_space_config:
-        # We pass the entire "feature_space_config" to FeatureSpaceCreator
-        # The user_features array inside "feature_space_config.features" is used.
         logger.info("Generating embeddings with FeatureSpaceCreator.")
         fsc = FeatureSpaceCreator(config=feature_space_config, device="cuda")
-        feature_data = fsc.process(df)  # includes columns like "text_embedding"
-        
-        # For each feature definition
+        feature_data = fsc.process(df)
+
         for feat in user_features:
             node_id_col = feat.get("node_id_column")
             col_name = feat.get("column_name")
             feat_type = feat.get("type", "text").lower()
-
             if not node_id_col or not col_name:
                 logger.warning(f"Skipping feature {feat} because node_id_column or column_name is missing.")
                 continue
 
-            # If it's a text feature, the column is named <col>_embedding
-            # If numeric, the column is named <col>_feature
-            if feat_type == "numeric":
-                feature_col_name = f"{col_name}_feature"
-            else:
-                feature_col_name = f"{col_name}_embedding"
-
+            feature_col_name = f"{col_name}_embedding" if feat_type == "text" else f"{col_name}_feature"
             if feature_col_name not in feature_data.columns:
                 logger.warning(f"Feature column '{feature_col_name}' not found in feature_data. Skipping.")
                 continue
 
-            # Ensure the node_id_column is in feature_data
             if node_id_col not in feature_data.columns:
                 if node_id_col not in df.columns:
                     logger.error(f"Column '{node_id_col}' does not exist in CSV. Cannot attach features.")
                     continue
                 feature_data[node_id_col] = df[node_id_col]
 
-            # Attach the feature to the correct node in graph_data
-            for idx, row in feature_data.iterrows():
-                node_id_value = row[node_id_col]
-                if pd.isnull(node_id_value):
+            for idx, row_ in feature_data.iterrows():
+                node_id_val = row_[node_id_col]
+                if pd.isnull(node_id_val):
                     continue
-                node_id_str = str(node_id_value)
+                node_id_str = str(node_id_val)
 
-                val = row[feature_col_name]
-                # If it's a numpy array, convert to list
+                val = row_[feature_col_name]
                 if isinstance(val, np.ndarray):
                     val = val.tolist()
 
-                # find the node in graph_data
                 for n in graph_data["nodes"]:
                     if str(n["id"]) == node_id_str:
                         if "features" not in n:
@@ -113,13 +111,10 @@ def process_data(req: ProcessDataRequest):
                         n["features"][feature_col_name] = val
                         break
 
-
-
         logger.info("Feature embeddings attached to graph nodes.")
     else:
         logger.info("No advanced embeddings requested.")
 
-    # Optionally, return the feature_data CSV
     feature_data_csv = None
     if feature_data is not None:
         feature_data_csv = feature_data.to_csv(index=False)
