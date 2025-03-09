@@ -1,0 +1,96 @@
+// Backend Data Flow Diagram
+digraph {
+	dpi=600 rankdir=TB ratio=fill size="8,8!" splines=polyline
+	graph [concentrate=true margin=0.05 nodesep=0.2 ranksep=0.2]
+	FSC_Input [label="Input DataFrame
+Shape: (N, m)
+Columns: text, num, time" fillcolor=lightblue shape=box style=filled]
+	FSC_TextPre [label="Text Preprocessing & Tokenization
+\"raw text\" → Tokens" fillcolor=lightyellow shape=box style=filled]
+	FSC_BERT [label="BERT Embedding
+Tokens → Embedding
+Shape: (768,)
+f: Text → ℝ⁷⁶⁸" fillcolor=lightgreen shape=box style=filled]
+	FSC_PCA [label="PCA Reduction
+ℝ⁷⁶⁸ → ℝ^(target_dim)
+(e.g., 768 → 2)" fillcolor=lightpink shape=box style=filled]
+	FSC_TextOut [label="Output Text Embedding
+Shape: (N, target_dim)" fillcolor=lightcyan shape=box style=filled]
+	FSC_Numeric [label="Numeric Processing
+Standardization
+Input: (N,1)" fillcolor=lightgray shape=box style=filled]
+	FSC_NumOut [label="Output Numeric Feature
+Shape: (N, 1)" fillcolor=khaki shape=box style=filled]
+	FSC_TimePre [label="Extract \"time\" Column
+Raw time data" fillcolor=thistle shape=box style=filled]
+	FSC_TimeSin [label="Sinusoidal Time Encoding
+f(time) = [sin(ωt), cos(ωt), ...]
+Shape: (N, time_dim)" fillcolor=lightcoral shape=box style=filled]
+	FSC_TimeLearn [label="Learned Time Embedding
+Embedding Lookup
+Shape: (N, time_dim)" fillcolor=palegoldenrod shape=box style=filled]
+	FSC_TimeOut [label="Output Time Feature
+Shape: (N, time_dim)" fillcolor=plum shape=box style=filled]
+	FSC_Combined [label="Combined Feature Space
+Columns: text_embedding, num_feature, time_feature
+Shape: (N, d_FSC)" fillcolor=wheat shape=box style=filled]
+	FSC_Input -> FSC_TextPre [label="Extract \"text\""]
+	FSC_TextPre -> FSC_BERT [label="Tokenized text"]
+	FSC_BERT -> FSC_PCA [label="BERT embedding (768-dim)"]
+	FSC_PCA -> FSC_TextOut [label="Reduce to target_dim"]
+	FSC_Input -> FSC_Numeric [label="Extract \"num\""]
+	FSC_Numeric -> FSC_NumOut [label=Standardize]
+	FSC_Input -> FSC_TimePre [label="Extract \"time\""]
+	FSC_TimePre -> FSC_TimeSin [label="Sinusoidal encoding" style=dotted]
+	FSC_TimePre -> FSC_TimeLearn [label="Learned embedding" style=dotted]
+	FSC_TimeSin -> FSC_TimeOut [label="Use Sinusoidal" style=dashed]
+	FSC_TimeLearn -> FSC_TimeOut [label="Use Learned" style=dashed]
+	FSC_TextOut -> FSC_Combined [label="Add text_embedding"]
+	FSC_NumOut -> FSC_Combined [label="Add num_feature"]
+	FSC_TimeOut -> FSC_Combined [label="Add time_feature"]
+	DFG_Input [label="DataFrame Input
+(Includes: *_embedding, *_feature, time_feature)" fillcolor=lightblue shape=box style=filled]
+	DFG_Extract [label="Extract Node Features
+Output: Feature dict for each node
+Vector ∈ ℝ^(d)" fillcolor=lightgreen shape=box style=filled]
+	DFG_Graph [label="Construct NetworkX Graph
+Nodes: (id, type, features)
+Edges: per relationship" fillcolor=orange shape=box style=filled]
+	FSC_Combined -> DFG_Input [label="Use processed DataFrame"]
+	DFG_Input -> DFG_Extract [label="Parse rows & extract features"]
+	DFG_Extract -> DFG_Graph [label="Create nodes & edges"]
+	TGG_Input [label="JSON Node-Link Input
+{
+  \"nodes\": [{id, features, label}],
+  \"links\": [{source:{id}, target:{id}}]
+}" fillcolor=lightblue shape=box style=filled]
+	TGG_Mapping [label="Map Node IDs → Indices
+Output: mapping (id → index)" fillcolor=lightgreen shape=box style=filled]
+	TGG_Features [label="Construct Feature Matrix x
+Concatenate features from nodes
+Shape: (n, d)" fillcolor=lightyellow shape=box style=filled]
+	TGG_Structural [label="Add Structural Features
+x → [x, degree]
+Shape: (n, d+1)" fillcolor=lightpink shape=box style=filled]
+	TGG_PCA [label="PCA Reduction
+ℝ^(d+1) → ℝ^(target_dim_TGG)
+(e.g., (d+1) → 50)" fillcolor=lavender shape=box style=filled]
+	TGG_Split [label="Split Data
+Create train/val/test masks
+Final Data: x, edge_index, y, masks" fillcolor=khaki shape=box style=filled]
+	TGG_Input -> TGG_Mapping [label="Parse JSON"]
+	TGG_Mapping -> TGG_Features [label="Build x: (n, d)"]
+	TGG_Features -> TGG_Structural [label="Concatenate degree"]
+	TGG_Structural -> TGG_PCA [label="Apply PCA (optional)"]
+	TGG_PCA -> TGG_Split [label="Reduced x: (n, target_dim_TGG)"]
+	TGG_Features -> TGG_Split [label="If no PCA, use x" style=dashed]
+	Conversion [label="Conversion:
+NetworkX Graph → JSON Node-Link
+(Export from DFG)" fillcolor=yellow shape=ellipse style=filled]
+	DFG_Graph -> Conversion [label="Export graph as JSON"]
+	Conversion -> TGG_Input [label="Feed JSON to TGG"]
+	fontcolor=black fontname=Arial fontsize=12 label="Params & Shapes:
+FSC: BERT (768→target_dim, e.g.2); Standardize (N,1); Time: sin/cat learned → (N,time_dim); Combined: (N,target_dim+1(+time_dim))
+DFG: Nodes: features ∈ ℝ^(d);
+TGG: x: (n,d)→[x,degree]→(n,d+1)→PCA→(n,target_dim_TGG, e.g.50)" labelloc=b
+}

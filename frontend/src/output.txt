@@ -1,0 +1,2410 @@
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./api.js:
+
+
+```
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+
+export const processData = async (data, config) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/process-data`, { data, config });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./App.css:
+
+
+```
+:root {
+  --background-color: #2E2E38;
+  --primary-color: #1f1f1f;
+  --secondary-color: #1e1e1e;
+  --accent-color: #bb86fc;
+  --text-color: #ffffff;
+  --secondary-text-color: #bbbbbb;
+  --border-color: #333333;
+  --button-background: #bb86fc;
+  --button-hover: #985eff;
+  --modal-background: #1f1f1f;
+  --dropzone-border: #444444;
+  --dropzone-background: #1f1f1f;
+  --dropzone-active-background: #2c2c2c;
+  --input-background: #2c2c2c;
+  --input-text-color: #ffffff;
+  --button-text-color: #ffffff;
+}
+
+/* Global Styles */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+h1, h2, h3 {
+  color: var(--accent-color);
+  text-align: center;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.accent-text-center {
+  text-align: center;
+  color: var(--accent-color);
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 90px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  padding: 0 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.app-header:hover {
+  background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+}
+
+.logo-container {
+  position: absolute;
+  left: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.app-logo {
+  height: 50px;
+  margin-right: 15px;
+}
+
+.app-name {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.nav-link {
+  margin-left: 15px;
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 1.1em;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  background: var(--accent-color);
+  left: 0;
+  bottom: -5px;
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+  color: var(--accent-color);
+}
+
+.nav-link:hover::after,
+.active-link::after {
+  width: 100%;
+}
+
+.active-link {
+  color: var(--accent-color);
+}
+
+/* Main Layout (Sidebar + Content) */
+.main-layout {
+  display: flex;
+  flex: 1;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 400px;
+  background: var(--primary-color);
+  border-right: 1px solid var(--border-color);
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: 600;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Configuration Panel */
+.config-section {
+  width: 78%;
+  background: var(--primary-color);
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  margin: 20px auto;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.config-section h2 {
+  margin-top: 0;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.node-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.node-selector {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.node-selector input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-color);
+}
+
+.node-selector label {
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.config-section button {
+  background: var(--button-background);
+  color: var(--button-text-color);
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: background 0.3s;
+  display: block;
+  margin: 0 auto;
+}
+
+.config-section button:hover {
+  background: var(--button-hover);
+}
+
+.config-section button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+/* File Uploader */
+.file-uploader {
+  width: 80%;
+  margin: 20px auto;
+}
+
+.dropzone {
+  border: 2px dashed var(--dropzone-border);
+  background: var(--dropzone-background);
+  padding: 40px;
+  text-align: center;
+  border-radius: 8px;
+  transition: background 0.3s, border-color 0.3s;
+  color: var(--secondary-text-color);
+  cursor: pointer;
+}
+
+.dropzone.active {
+  background: var(--dropzone-active-background);
+  border-color: var(--accent-color);
+}
+
+.dropzone p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* Graph Visualization */
+.graph-section {
+  width: 80%;
+  margin-top: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--primary-color);
+  padding: 20px;
+  box-sizing: border-box;
+  margin: 20px auto;
+}
+
+.graph-section h2 {
+  margin-top: 0;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.graph-container {
+  width: 100%;
+  height: 600px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--background-color);
+  border-radius: 5px;
+}
+
+/* Modals */
+.node-edit-modal,
+.relationship-modal {
+  background: var(--modal-background);
+  color: var(--text-color);
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+  outline: none;
+  position: relative;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  background: var(--input-background);
+  color: var(--input-text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-buttons button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  background: var(--button-background);
+  color: var(--button-text-color);
+}
+
+.modal-buttons button:hover {
+  background: var(--button-hover);
+}
+
+.reopen-flow-btn {
+  width: 15%;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background-color: var(--accent-color);
+  color: var(--button-text-color);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Feature Configuration */
+.feature-config {
+  margin-top: 20px;
+}
+
+.feature-config h3 {
+  color: var(--accent-color);
+  margin-bottom: 10px;
+}
+
+.feature-config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+  background: var(--secondary-color);
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.feature-config-item label {
+  font-weight: 500;
+}
+
+.feature-config-item input,
+.feature-config-item select {
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--input-background);
+  color: var(--input-text-color);
+  margin: 2px ;
+}
+
+.add-feature-btn {
+  background: var(--button-background);
+  color: var(--button-text-color);
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: background 0.3s;
+  margin-top: 10px;
+  display: block;
+  margin-left: auto;
+}
+
+.add-feature-btn:hover {
+  background: var(--button-hover);
+}
+
+.remove-feature-btn {
+  background: #ff4d4d;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 4px;
+  align-self: flex-end;
+}
+
+
+/* Info Modal specific styling */
+.info-modal-content {
+  max-width: 500px;
+  background: var(--modal-background);
+  color: var(--text-color);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 0 auto;
+  outline: none;
+}
+
+.info-modal-title {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+  color: var(--accent-color);
+}
+
+.info-modal-description p,
+.info-modal-description ul {
+  margin: 0.5em 0;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.info-modal-description ul {
+  list-style: disc;
+  margin-left: 1.5em;
+}
+
+/* Buttons spacing improvement */
+.add-feature-btn {
+  margin-right: 10px; /* Put some space between add feature and process graph */
+}
+
+.config-section button {
+  margin-bottom: 8px; /* extra spacing at bottom so they're not so close */
+}
+
+/* Apply the same color variables to MUI Accordions inside the sidebar */
+.sidebar .MuiAccordion-root {
+  background-color: var(--primary-color) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+  margin-bottom: 10px;
+}
+
+.sidebar .MuiAccordionSummary-root,
+.sidebar .MuiAccordionSummary-content,
+.sidebar .MuiAccordionSummary-expandIconWrapper svg {
+  color: var(--text-color) !important;
+}
+
+.sidebar .MuiAccordionDetails-root {
+  background-color: var(--secondary-color) !important;
+  color: var(--text-color) !important;
+}
+
+
+
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./App.js:
+
+
+```
+// src/App.js
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import Sidebar from './components/Sidebar';
+import GraphNet from './components/GraphNet-Tab/GraphNet';
+import useGraph from './hooks/useGraph';
+import './App.css';
+
+function App() {
+  // 1) Use the same custom hook at the top level.
+  const {
+    csvData,
+    graphData,
+    columns,
+    config,
+    loading,
+    nodes,
+    edges,
+    nodeEditModalIsOpen,
+    currentNode,
+    relationshipModalIsOpen,
+    currentEdge,
+    handleFileDrop,
+    handleSelectNode,
+    handleSubmit,
+    onNodesChange,
+    onEdgesChange,
+    onConnectHandler,
+    onNodeClickHandler,
+    onSaveRelationship,
+    setNodeEditModalIsOpen,
+    setRelationshipModalIsOpen,
+    handleSaveNodeEdit,
+    useFeatureSpace,
+    toggleFeatureSpace,
+    featureConfigs,
+    setFeatureConfigs,
+  } = useGraph();
+
+  return (
+    <div className="app-container">
+      <Header />
+      <div className="main-layout">
+        {/*
+          2) Pass graphData and csvData (and any other needed props)
+             into the Sidebar so it can show stats.
+        */}
+        <Sidebar
+          graphData={graphData}
+          csvData={csvData}
+        />
+
+        <div className="content">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <GraphNet
+                  // 3) Also pass needed props into GraphNet
+                  csvData={csvData}
+                  columns={columns}
+                  graphData={graphData}
+                  config={config}
+                  loading={loading}
+                  nodes={nodes}
+                  edges={edges}
+                  nodeEditModalIsOpen={nodeEditModalIsOpen}
+                  currentNode={currentNode}
+                  relationshipModalIsOpen={relationshipModalIsOpen}
+                  currentEdge={currentEdge}
+                  handleFileDrop={handleFileDrop}
+                  handleSelectNode={handleSelectNode}
+                  handleSubmit={handleSubmit}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnectHandler={onConnectHandler}
+                  onNodeClickHandler={onNodeClickHandler}
+                  onSaveRelationship={onSaveRelationship}
+                  setNodeEditModalIsOpen={setNodeEditModalIsOpen}
+                  setRelationshipModalIsOpen={setRelationshipModalIsOpen}
+                  handleSaveNodeEdit={handleSaveNodeEdit}
+                  useFeatureSpace={useFeatureSpace}
+                  toggleFeatureSpace={toggleFeatureSpace}
+                  featureConfigs={featureConfigs}
+                  setFeatureConfigs={setFeatureConfigs}
+                />
+              }
+            />
+          </Routes>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/GraphNet-Tab/ConfigurationPanel.js:
+
+
+```
+// src/components/GraphNet-Tab/ConfigurationPanel.js
+
+import React, { useState } from 'react';
+import { Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { FiList, FiSettings, FiPlay } from 'react-icons/fi';
+import InfoButton from '../InfoButton';
+import sectionsInfo from '../../sectionsInfo';
+
+/**
+ * Minimal criteria to treat a feature as "complete":
+ *  - node_id_column, column_name, and type must be set.
+ *  - if type === 'text', check embedding_dim (or any other fields you consider mandatory).
+ *  - if type === 'numeric', check data_type or others if you like.
+ */
+function isFeatureComplete(feature) {
+  const { node_id_column, column_name, type } = feature;
+  if (!node_id_column || !column_name || !type) return false;
+  if (type === 'text' && !feature.embedding_dim) return false;
+  return true;
+}
+
+const ConfigurationPanel = ({
+  columns,
+  onSelectNode,
+  onSubmit, // function(labelColumn)
+  loading,
+  selectedNodes,
+  useFeatureSpace,
+  onToggleFeatureSpace,
+  featureConfigs,
+  setFeatureConfigs
+}) => {
+  // Local state for “expanded” feature panels
+  const [expandedIndices, setExpandedIndices] = useState(
+    featureConfigs.map(() => true)
+  );
+
+  // Local state for chosen label column
+  const [labelColumn, setLabelColumn] = useState('');
+
+  React.useEffect(() => {
+    if (expandedIndices.length < featureConfigs.length) {
+      setExpandedIndices((prev) => [
+        ...prev,
+        ...Array(featureConfigs.length - prev.length).fill(true),
+      ]);
+    }
+  }, [featureConfigs, expandedIndices]);
+
+  const toggleExpand = (index) => {
+    setExpandedIndices((prev) => {
+      const updated = [...prev];
+      updated[index] = !prev[index];
+      return updated;
+    });
+  };
+
+  const addFeature = () => {
+    setFeatureConfigs((prev) => [
+      ...prev,
+      {
+        node_id_column: '',
+        column_name: '',
+        type: 'text',
+        embedding_method: 'bert',
+        embedding_dim: 768,
+        additional_params: {},
+        data_type: 'float',
+        processing: 'none',
+        projection: {},
+      },
+    ]);
+    setExpandedIndices((prev) => [...prev, true]);
+  };
+
+  const removeFeature = (index) => {
+    const updated = featureConfigs.filter((_, i) => i !== index);
+    setFeatureConfigs(updated);
+    const updatedExpanded = expandedIndices.filter((_, i) => i !== index);
+    setExpandedIndices(updatedExpanded);
+  };
+
+  const updateFeature = (index, key, value) => {
+    const updated = featureConfigs.map((feature, i) => {
+      if (i === index) {
+        return { ...feature, [key]: value };
+      }
+      return feature;
+    });
+    setFeatureConfigs(updated);
+  };
+
+  function renderFeatureSummary(feature, index) {
+    const {
+      node_id_column,
+      column_name,
+      type,
+      embedding_method,
+      embedding_dim,
+      data_type,
+      processing,
+      projection
+    } = feature;
+
+    return (
+      <div
+        style={{
+          background: 'var(--input-background)',
+          padding: '10px',
+          borderRadius: '4px',
+          marginBottom: '10px',
+          fontSize: '0.85rem',
+        }}
+      >
+        <strong>Feature {index + 1}</strong>
+        <div style={{ marginTop: '6px' }}>
+          <p><strong>Node ID:</strong> {node_id_column}</p>
+          <p><strong>Column:</strong> {column_name}</p>
+          <p><strong>Type:</strong> {type}</p>
+          {type === 'text' && (
+            <p>
+              <strong>Embedding:</strong> {embedding_method} ({embedding_dim}D)
+            </p>
+          )}
+          {type === 'numeric' && (
+            <>
+              <p><strong>Data Type:</strong> {data_type}</p>
+              <p><strong>Processing:</strong> {processing}</p>
+              <p>
+                <strong>Projection:</strong> {projection.method || 'none'}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  function renderEditForm(feature, index) {
+    return (
+      <div style={{ fontSize: '0.85rem' }}>
+        <label>
+          Node ID Column:
+          <select
+            value={feature.node_id_column}
+            onChange={(e) => updateFeature(index, 'node_id_column', e.target.value)}
+            required
+          >
+            <option value="">--Select--</option>
+            {columns.map((col) => (
+              <option key={col} value={col}>
+                {col}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Feature Column Name:
+          <select
+            value={feature.column_name}
+            onChange={(e) => updateFeature(index, 'column_name', e.target.value)}
+            required
+          >
+            <option value="">--Select--</option>
+            {columns.map((col) => (
+              <option key={col} value={col}>
+                {col}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Feature Type:
+          <select
+            value={feature.type}
+            onChange={(e) => updateFeature(index, 'type', e.target.value)}
+          >
+            <option value="text">Text</option>
+            <option value="numeric">Numeric</option>
+          </select>
+        </label>
+
+        {/* text-based feature config */}
+        {feature.type === 'text' && (
+          <>
+            <label>
+              Embedding Method:
+              <select
+                value={feature.embedding_method}
+                onChange={(e) =>
+                  updateFeature(index, 'embedding_method', e.target.value)
+                }
+              >
+                <option value="bert">BERT</option>
+                <option value="glove">GloVe</option>
+                <option value="word2vec">Word2Vec</option>
+              </select>
+            </label>
+            <label>
+              Embedding Dimension:
+              <input
+                type="number"
+                value={feature.embedding_dim}
+                onChange={(e) =>
+                  updateFeature(index, 'embedding_dim', parseInt(e.target.value))
+                }
+                placeholder="e.g., 768"
+                required
+                min="50"
+                max="2048"
+              />
+            </label>
+
+            {feature.embedding_method === 'glove' && (
+              <label>
+                GloVe Cache Path:
+                <input
+                  type="text"
+                  value={feature.additional_params.glove_cache_path || ''}
+                  onChange={(e) =>
+                    updateFeature(index, 'additional_params', {
+                      ...feature.additional_params,
+                      glove_cache_path: e.target.value,
+                    })
+                  }
+                  placeholder="Path to GloVe cache"
+                  required
+                />
+              </label>
+            )}
+            {feature.embedding_method === 'word2vec' && (
+              <label>
+                Word2Vec Model Path:
+                <input
+                  type="text"
+                  value={feature.additional_params.word2vec_model_path || ''}
+                  onChange={(e) =>
+                    updateFeature(index, 'additional_params', {
+                      ...feature.additional_params,
+                      word2vec_model_path: e.target.value,
+                    })
+                  }
+                  placeholder="Path to Word2Vec model"
+                />
+              </label>
+            )}
+            {feature.embedding_method === 'bert' && (
+              <>
+                <label>
+                  BERT Model Name:
+                  <input
+                    type="text"
+                    value={feature.additional_params.bert_model_name || 'bert-base-uncased'}
+                    onChange={(e) =>
+                      updateFeature(index, 'additional_params', {
+                        ...feature.additional_params,
+                        bert_model_name: e.target.value,
+                      })
+                    }
+                    placeholder="e.g., bert-base-uncased"
+                    required
+                  />
+                </label>
+                <label>
+                  BERT Batch Size (optional):
+                  <input
+                    type="number"
+                    min="1"
+                    max="512"
+                    value={feature.additional_params.bert_batch_size || ''}
+                    onChange={(e) =>
+                      updateFeature(index, 'additional_params', {
+                        ...feature.additional_params,
+                        bert_batch_size: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    placeholder="e.g., 16"
+                  />
+                </label>
+              </>
+            )}
+          </>
+        )}
+
+        {/* numeric-based feature config */}
+        {feature.type === 'numeric' && (
+          <>
+            <label>
+              Data Type:
+              <select
+                value={feature.data_type}
+                onChange={(e) =>
+                  updateFeature(index, 'data_type', e.target.value)
+                }
+              >
+                <option value="float">Float</option>
+                <option value="int">Integer</option>
+              </select>
+            </label>
+            <label>
+              Processing:
+              <select
+                value={feature.processing}
+                onChange={(e) =>
+                  updateFeature(index, 'processing', e.target.value)
+                }
+              >
+                <option value="none">None</option>
+                <option value="standardize">Standardize</option>
+                <option value="normalize">Normalize</option>
+              </select>
+            </label>
+            <label>
+              Projection Method:
+              <select
+                value={feature.projection.method || 'none'}
+                onChange={(e) =>
+                  updateFeature(index, 'projection', {
+                    ...feature.projection,
+                    method: e.target.value,
+                  })
+                }
+              >
+                <option value="none">None</option>
+                <option value="linear">Linear</option>
+              </select>
+            </label>
+            {feature.projection.method === 'linear' && (
+              <label>
+                Target Dimension:
+                <input
+                  type="number"
+                  value={feature.projection.target_dim || 1}
+                  onChange={(e) =>
+                    updateFeature(index, 'projection', {
+                      ...feature.projection,
+                      target_dim: parseInt(e.target.value),
+                    })
+                  }
+                  placeholder="e.g., 10"
+                  required
+                  min="1"
+                  max="2048"
+                />
+              </label>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="config-section">
+      <Accordion
+        sx={{
+          backgroundColor: 'var(--primary-color)',
+          color: 'var(--text-color)',
+          border: '1px solid var(--border-color)',
+          marginBottom: '10px',
+        }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-color)' }} />}
+          sx={{
+            backgroundColor: 'var(--primary-color)',
+            '& .MuiAccordionSummary-content': { alignItems: 'center' },
+          }}
+        >
+          <FiList style={{ marginRight: 8 }} />
+          <strong>Node Selection</strong>
+          <InfoButton
+            title={sectionsInfo.configurationPanel.title}
+            description={sectionsInfo.configurationPanel.description}
+          />
+        </AccordionSummary>
+        <AccordionDetails
+          sx={{
+            backgroundColor: 'var(--secondary-color)',
+          }}
+        >
+          <div className="node-selection">
+            {columns.map((col) => (
+              <div key={col} className="node-selector">
+                <input
+                  type="checkbox"
+                  id={`node-${col}`}
+                  value={col}
+                  checked={selectedNodes.includes(col)}
+                  onChange={() => onSelectNode(col)}
+                />
+                <label htmlFor={`node-${col}`}>{col}</label>
+              </div>
+            ))}
+          </div>
+
+          <hr style={{ margin: '20px 0' }} />
+
+          {/* Label Column Picker */}
+          <div style={{ marginBottom: '15px', textAlign: 'center' }}>
+            <label style={{ marginRight: '10px' }}>
+              Choose Label Column:&nbsp;
+              <select
+                value={labelColumn}
+                onChange={(e) => setLabelColumn(e.target.value)}
+                style={{ minWidth: '120px' }}
+              >
+                <option value="">--None--</option>
+                {columns.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+            <label style={{ marginRight: '10px' }}>
+              <input
+                type="checkbox"
+                checked={useFeatureSpace}
+                onChange={onToggleFeatureSpace}
+              />
+              Use advanced feature creation (BERT/GloVe/Word2Vec)?
+            </label>
+          </div>
+        </AccordionDetails>
+      </Accordion>
+
+      {useFeatureSpace && (
+        <Accordion
+          sx={{
+            backgroundColor: 'var(--primary-color)',
+            color: 'var(--text-color)',
+            border: '1px solid var(--border-color)',
+            marginBottom: '10px',
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-color)' }} />}
+            sx={{
+              backgroundColor: 'var(--primary-color)',
+            }}
+          >
+            <FiSettings style={{ marginRight: 8 }} />
+            <strong>Advanced Feature Creation</strong>
+            <InfoButton
+              title={sectionsInfo.featureColumns.title}
+              description={sectionsInfo.featureColumns.description}
+            />
+          </AccordionSummary>
+          <AccordionDetails
+            sx={{
+              backgroundColor: 'var(--secondary-color)',
+            }}
+          >
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: '16px',
+              }}
+            >
+              {featureConfigs.map((feature, index) => {
+                const complete = isFeatureComplete(feature);
+                const expanded = expandedIndices[index];
+
+                return (
+                  <div
+                    key={index}
+                    className="feature-config-item"
+                    style={{
+                      background: 'var(--primary-color)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '5px',
+                      padding: '12px',
+                      boxSizing: 'border-box',
+                      position: 'relative',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="remove-feature-btn"
+                      onClick={() => removeFeature(index)}
+                      style={{
+                        background: '#ff4d4d',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '4px 6px',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        borderRadius: '4px',
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                      }}
+                    >
+                      Remove
+                    </button>
+
+                    {complete && !expanded && (
+                      <>
+                        {renderFeatureSummary(feature, index)}
+                        <button
+                          onClick={() => toggleExpand(index)}
+                          style={{
+                            marginTop: '4px',
+                            fontSize: '0.85rem',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            background: 'var(--button-background)',
+                            color: 'var(--button-text-color)',
+                            border: 'none',
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </>
+                    )}
+                    {(!complete || expanded) && (
+                      <>
+                        {complete && (
+                          <div style={{ marginBottom: '8px' }}>
+                            {renderFeatureSummary(feature, index)}
+                          </div>
+                        )}
+                        {renderEditForm(feature, index)}
+                        <button
+                          onClick={() => toggleExpand(index)}
+                          style={{
+                            marginTop: '6px',
+                            fontSize: '0.85rem',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            background: 'var(--button-background)',
+                            color: 'var(--button-text-color)',
+                            border: 'none',
+                          }}
+                        >
+                          {complete ? 'Close' : 'Done'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="add-feature-btn"
+              onClick={addFeature}
+              style={{
+                marginTop: '16px',
+                fontSize: '0.9rem',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                background: 'var(--button-background)',
+                color: 'var(--button-text-color)',
+                border: 'none',
+              }}
+            >
+              Add Feature
+            </button>
+          </AccordionDetails>
+        </Accordion>
+      )}
+
+      <Accordion
+        sx={{
+          backgroundColor: 'var(--primary-color)',
+          color: 'var(--text-color)',
+          border: '1px solid var(--border-color)',
+        }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-color)' }} />}
+          sx={{
+            backgroundColor: 'var(--primary-color)',
+          }}
+        >
+          <FiPlay style={{ marginRight: 8 }} />
+          <strong>Process Graph</strong>
+          <InfoButton
+            title={sectionsInfo.processGraph.title}
+            description={sectionsInfo.processGraph.description}
+          />
+        </AccordionSummary>
+        <AccordionDetails
+          sx={{
+            backgroundColor: 'var(--secondary-color)',
+          }}
+        >
+          <div style={{ marginTop: '10px', textAlign: 'center' }}>
+            <button
+              onClick={() => onSubmit(labelColumn)}
+              disabled={loading || selectedNodes.length === 0}
+              style={{ marginTop: '10px' }}
+            >
+              {loading ? 'Processing...' : 'Process Graph'}
+            </button>
+          </div>
+        </AccordionDetails>
+      </Accordion>
+    </div>
+  );
+};
+
+export default ConfigurationPanel;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/GraphNet-Tab/FileUploader.js:
+
+
+```
+import React from 'react';
+import { useDropzone } from 'react-dropzone';
+import Papa from 'papaparse';
+import InfoButton from '../InfoButton';
+import sectionsInfo from '../../sectionsInfo';
+
+const FileUploader = ({ onFileDrop }) => {
+  const onDrop = (acceptedFiles) => {
+    if (!acceptedFiles.length) return;
+    const file = acceptedFiles[0];
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const data = results.data;
+        const fields = results.meta.fields;
+        onFileDrop(data, fields);
+      },
+      error: (error) => {
+        console.error('Error parsing CSV:', error);
+        alert('Error parsing CSV file.');
+      },
+    });
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: '.csv',
+    multiple: false,
+  });
+
+  return (
+    <div className="file-uploader">
+      <h3 style={{ textAlign: 'center' }}>
+        Upload Your CSV
+        <InfoButton
+          title={sectionsInfo.fileUploader.title}
+          description={sectionsInfo.fileUploader.description}
+        />
+      </h3>
+      <div
+        {...getRootProps()}
+        className={`dropzone ${isDragActive ? 'active' : ''}`}
+        style={{ marginTop: '10px' }}
+      >
+        <input {...getInputProps()} />
+        {isDragActive ? (
+          <p>Drop the CSV file here...</p>
+        ) : (
+          <p>Drag & drop a CSV file here, or click to select file</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default FileUploader;
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/GraphNet-Tab/GraphNet.js:
+
+
+```
+// src/components/GraphNet-Tab/GraphNet.js
+import React, { useState } from 'react';
+import FileUploader from './FileUploader';
+import ConfigurationPanel from './ConfigurationPanel';
+import ReactFlowWrapper from './ReactFlowWrapper';
+import GraphVisualizer from './GraphVisualizer';
+import NodeEditModal from './NodeEditModal';
+import RelationshipModal from './RelationshipModal';
+import InfoButton from '../InfoButton';
+import sectionsInfo from '../../sectionsInfo';
+
+function GraphNet(props) {
+  const {
+    columns,
+    graphData,
+    loading,
+    nodes,
+    edges,
+    nodeEditModalIsOpen,
+    currentNode,
+    relationshipModalIsOpen,
+    currentEdge,
+    handleFileDrop,
+    handleSelectNode,
+    handleSubmit,
+    onNodesChange,
+    onEdgesChange,
+    onConnectHandler,
+    onNodeClickHandler,
+    onSaveRelationship,
+    setNodeEditModalIsOpen,
+    setRelationshipModalIsOpen,
+    handleSaveNodeEdit,
+    useFeatureSpace,
+    toggleFeatureSpace,
+    featureConfigs,
+    setFeatureConfigs,
+  } = props;
+
+  const [showReactFlow, setShowReactFlow] = useState(true);
+
+  return (
+    <div className="main-content">
+      <h2>Linked Graph Network</h2>
+      <FileUploader onFileDrop={handleFileDrop} />
+
+      {columns.length > 0 && (
+        <ConfigurationPanel
+          columns={columns}
+          onSelectNode={handleSelectNode}
+          onSubmit={async (labelCol) => {
+            await handleSubmit(labelCol);
+            setShowReactFlow(false);
+          }}
+          loading={loading}
+          selectedNodes={props.config?.nodes?.map(n => n.id) || []}
+          useFeatureSpace={useFeatureSpace}
+          onToggleFeatureSpace={toggleFeatureSpace}
+          featureConfigs={featureConfigs}
+          setFeatureConfigs={setFeatureConfigs}
+        />
+      )}
+
+      {columns.length > 0 && !showReactFlow && (
+        <button
+          className="button reopen-flow-btn"
+          onClick={() => setShowReactFlow(true)}
+        >
+          Reopen React Flow Configuration
+        </button>
+      )}
+
+      {columns.length > 0 && showReactFlow && (
+        <>
+          <h3 className="accent-text-center" style={{ marginTop: '20px' }}>
+            React Flow Configuration
+            <InfoButton
+              title={sectionsInfo.graphFlow.title}
+              description={sectionsInfo.graphFlow.description}
+            />
+          </h3>
+          <ReactFlowWrapper
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnectHandler}
+            onNodeClick={onNodeClickHandler}
+          />
+        </>
+      )}
+
+      {graphData && <GraphVisualizer graphData={graphData} />}
+
+      {currentNode && (
+        <NodeEditModal
+          isOpen={nodeEditModalIsOpen}
+          onRequestClose={() => setNodeEditModalIsOpen(false)}
+          node={currentNode}
+          onSaveNodeEdit={handleSaveNodeEdit}
+        />
+      )}
+
+      {currentEdge && relationshipModalIsOpen && (
+        <RelationshipModal
+          isOpen={relationshipModalIsOpen}
+          onRequestClose={() => setRelationshipModalIsOpen(false)}
+          onSaveRelationship={onSaveRelationship}
+        />
+      )}
+    </div>
+  );
+}
+
+export default GraphNet;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/GraphNet-Tab/GraphVisualizer.js:
+
+
+```
+import React, { useRef, useEffect, useState } from 'react';
+import ForceGraph2D from 'react-force-graph-2d';
+import InfoButton from '../InfoButton';
+import sectionsInfo from '../../sectionsInfo';
+
+const GraphVisualizer = ({ graphData, onNodeClick }) => {
+  const fgRef = useRef();
+  const containerRef = useRef(null);
+
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [processedGraphData, setProcessedGraphData] = useState(null);
+  const [hoverNode, setHoverNode] = useState(null);
+
+  useEffect(() => {
+    if (fgRef.current) {
+      fgRef.current.d3Force('charge').strength(-200);
+    }
+  }, []);
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        setDimensions({ width, height });
+      }
+    });
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    return () => {
+      if (containerRef.current) {
+        resizeObserver.unobserve(containerRef.current);
+      }
+    };
+  }, [containerRef]);
+
+  useEffect(() => {
+    if (graphData?.nodes && graphData?.links) {
+      const degrees = {};
+      graphData.links.forEach((link) => {
+        degrees[link.source] = (degrees[link.source] || 0) + 1;
+        degrees[link.target] = (degrees[link.target] || 0) + 1;
+      });
+      const newNodes = graphData.nodes.map((node) => ({
+        ...node,
+        val: degrees[node.id] || 1,
+      }));
+      setProcessedGraphData({ ...graphData, nodes: newNodes });
+    }
+  }, [graphData]);
+
+  const isDirected = graphData && graphData.directed === true;
+  const backgroundColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--background-color')
+    .trim() || '#121212';
+
+  return (
+    <div className="graph-section">
+      <h2>
+        Graph Visualization
+        <InfoButton
+          title={sectionsInfo.graphVisualization.title}
+          description={sectionsInfo.graphVisualization.description}
+        />
+      </h2>
+      <div className="graph-container" ref={containerRef}>
+        {processedGraphData && (
+          <ForceGraph2D
+            ref={fgRef}
+            graphData={processedGraphData}
+            nodeAutoColorBy="type"
+            linkAutoColorBy="type"
+            nodeLabel="id"
+            linkLabel="type"
+            nodeVal={(node) => node.val || 1}
+            onNodeClick={(node) => {
+              if (onNodeClick) onNodeClick(node);
+            }}
+            onNodeHover={(node) => {
+              setHoverNode(node);
+            }}
+            onBackgroundClick={() => setHoverNode(null)}
+            linkDirectionalArrowLength={isDirected ? 6 : 0}
+            linkDirectionalArrowRelPos={0.5}
+            width={dimensions.width}
+            height={dimensions.height}
+            backgroundColor={backgroundColor}
+          />
+        )}
+        {hoverNode && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '10px',
+              left: '10px',
+              background: 'rgba(0,0,0,0.7)',
+              color: '#fff',
+              padding: '10px',
+              borderRadius: '5px',
+              maxWidth: '300px',
+              pointerEvents: 'none'
+            }}
+          >
+            <strong>ID:</strong> {hoverNode.id}<br />
+            <strong>Type:</strong> {hoverNode.type}<br />
+            {hoverNode.features && Object.keys(hoverNode.features).map((key) => (
+              <div key={key}>
+                <strong>{key}:</strong> {Array.isArray(hoverNode.features[key]) ? hoverNode.features[key].slice(0, 3).map(f => JSON.stringify(f)).join(', ') + '...' : JSON.stringify(hoverNode.features[key])}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default GraphVisualizer;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/GraphNet-Tab/NodeEditModal.js:
+
+
+```
+import React, { useState, useEffect } from 'react';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root');
+
+const NodeEditModal = ({ isOpen, onRequestClose, node, onSaveNodeEdit }) => {
+  const [nodeType, setNodeType] = useState(node.type || '');
+  const [nodeFeatures, setNodeFeatures] = useState(node.features || []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setNodeType(node.type || '');
+      setNodeFeatures(node.features || []);
+    }
+  }, [isOpen, node]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSaveNodeEdit({ nodeType, nodeFeatures });
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onRequestClose={onRequestClose}
+      contentLabel="Edit Node"
+      className="node-edit-modal"
+      overlayClassName="overlay"
+    >
+      <h2>Edit Node: {node.id}</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="node-type">Type:</label>
+          <input
+            type="text"
+            id="node-type"
+            value={nodeType}
+            onChange={(e) => setNodeType(e.target.value)}
+            placeholder="e.g., User, Post"
+          />
+        </div>
+        <div className="modal-buttons">
+          <button type="submit">Save</button>
+          <button type="button" onClick={onRequestClose}>
+            Cancel
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+export default NodeEditModal;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/GraphNet-Tab/ReactFlowWrapper.js:
+
+
+```
+import React from 'react';
+import ReactFlow, { Background, Controls } from 'react-flow-renderer';
+
+const ReactFlowWrapper = ({
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  onConnect,
+  onNodeClick,
+}) => {
+  return (
+    <div className="flow-wrapper">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        fitView
+        style={{ width: '100%', height: '400px' }}
+      >
+        <Background color="#aaa" gap={16} />
+        <Controls />
+      </ReactFlow>
+    </div>
+  );
+};
+
+export default ReactFlowWrapper;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/GraphNet-Tab/RelationshipModal.js:
+
+
+```
+import React, { useState } from 'react';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root');
+
+const RelationshipModal = ({ isOpen, onRequestClose, onSaveRelationship }) => {
+  const [relationshipType, setRelationshipType] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSaveRelationship({ relationshipType });
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onRequestClose={onRequestClose}
+      contentLabel="Define Relationship"
+      className="node-edit-modal relationship-modal"
+      overlayClassName="overlay"
+    >
+      <h2>Define Relationship</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="rel-type">Relationship Type:</label>
+          <input
+            type="text"
+            id="rel-type"
+            value={relationshipType}
+            onChange={(e) => setRelationshipType(e.target.value)}
+            placeholder="e.g., connects, influences"
+          />
+        </div>
+        <div className="modal-buttons">
+          <button type="submit">Save</button>
+          <button type="button" onClick={onRequestClose}>
+            Cancel
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+export default RelationshipModal;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/Header.js:
+
+
+```
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import logo from '../assets/logo.svg';
+
+const Header = () => {
+  return (
+    <header className="app-header">
+      <div className="logo-container">
+        <img src={logo} alt="Logo" className="app-logo" />
+        <span className="app-name">Graphcentric</span>
+      </div>
+      <nav className="nav-links">
+        <NavLink
+          to="/"
+          end
+          className={({ isActive }) =>
+            isActive ? 'nav-link active-link' : 'nav-link'
+          }
+        >
+          GraphNet
+        </NavLink>
+      </nav>
+    </header>
+  );
+};
+
+export default Header;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/InfoButton.js:
+
+
+```
+// src/components/InfoButton.js
+import React, { useState } from 'react';
+import { FiInfo } from 'react-icons/fi';
+import InfoModal from './InfoModal';
+
+/**
+ * @param {Object} props
+ * @param {string} props.title - The title for the info modal.
+ * @param {string} props.description - The description text for the info modal (HTML allowed).
+ */
+const InfoButton = ({ title, description }) => {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleOpen = () => setModalOpen(true);
+  const handleClose = () => setModalOpen(false);
+
+  return (
+    <span style={{ marginLeft: '8px', cursor: 'pointer', display: 'inline-block' }}>
+      <FiInfo onClick={handleOpen} style={{ verticalAlign: 'middle' }} />
+      <InfoModal 
+        isOpen={modalOpen} 
+        onRequestClose={handleClose} 
+        title={title} 
+        description={description}
+      />
+    </span>
+  );
+};
+
+export default InfoButton;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/InfoModal.js:
+
+
+```
+// src/components/InfoModal.js
+import React from 'react';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root');
+
+const InfoModal = ({ isOpen, onRequestClose, title, description }) => {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onRequestClose={onRequestClose}
+      contentLabel="Information Modal"
+      className="node-edit-modal info-modal-content"
+      overlayClassName="overlay"
+    >
+      <h2 className="info-modal-title">{title}</h2>
+      <div 
+        className="info-modal-description" 
+        dangerouslySetInnerHTML={{ __html: description }}
+      />
+      <div className="modal-buttons">
+        <button onClick={onRequestClose}>Close</button>
+      </div>
+    </Modal>
+  );
+};
+
+export default InfoModal;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./components/Sidebar.js:
+
+
+```
+// src/components/Sidebar.js
+import React, { useEffect, useState } from 'react';
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Button
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { FiDownload, FiBarChart2, FiDatabase } from 'react-icons/fi';
+import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Title, Tooltip as ChartTooltip, Legend } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+import InfoButton from './InfoButton';
+import sectionsInfo from '../sectionsInfo';
+
+// Register Chart.js components so chartjs-2 can use them
+ChartJS.register(BarElement, CategoryScale, LinearScale, Title, ChartTooltip, Legend);
+
+function Sidebar({ graphData, csvData }) {
+  const [degreeData, setDegreeData] = useState({ labels: [], values: [] });
+
+  // Basic stats about the CSV (rows & columns)
+  const csvRows = csvData?.length || 0;
+  const csvCols = csvData?.[0] ? Object.keys(csvData[0]).length : 0;
+
+  // Basic stats about the graph
+  const nodeCount = graphData?.nodes?.length || 0;
+  const edgeCount = graphData?.links?.length || 0;
+
+  /**
+   * Compute histogram of node degrees
+   * - We'll read graphData.links, count how many edges each node has, and produce a [degree -> count] map
+   */
+  useEffect(() => {
+    if (!graphData?.nodes?.length || !graphData?.links?.length) {
+      setDegreeData({ labels: [], values: [] });
+      return;
+    }
+
+    const degrees = {};
+    for (const node of graphData.nodes) {
+      degrees[node.id] = 0;
+    }
+    for (const link of graphData.links) {
+      degrees[link.source] = (degrees[link.source] || 0) + 1;
+      degrees[link.target] = (degrees[link.target] || 0) + 1;
+    }
+
+    // Now we have { nodeId: degree, ... }
+    // We want a histogram: degree -> frequency
+    const degreeFreq = {};
+    Object.values(degrees).forEach((deg) => {
+      degreeFreq[deg] = (degreeFreq[deg] || 0) + 1;
+    });
+
+    // Sort by degree
+    const sortedDegrees = Object.keys(degreeFreq).map(d => parseInt(d)).sort((a, b) => a - b);
+    const labels = sortedDegrees.map(String);
+    const values = sortedDegrees.map(d => degreeFreq[d]);
+
+    setDegreeData({ labels, values });
+  }, [graphData]);
+
+  /**
+   * Example function to download graph as JSON
+   * (with nodes & links). You can adapt for CSV, etc.
+   */
+  const handleDownloadJSON = () => {
+    if (!graphData) return;
+    const jsonString = JSON.stringify(graphData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'graph_data.json';
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  /**
+   * Example: Download CSV version (very rough example).
+   */
+  const handleDownloadCSV = () => {
+    if (!graphData) return;
+
+    // We'll do minimal CSV: nodeId, nodeType, features
+    // If you want edges or something else, do similarly
+    let csvContent = 'id,type,features\n';
+    graphData.nodes.forEach((node) => {
+      // features might be an object. Turn into a JSON string for CSV
+      const featuresStr = node.features ? JSON.stringify(node.features).replaceAll(',', ';') : '';
+      csvContent += `${node.id},${node.type || ''},${featuresStr}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'graph_data.csv';
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="sidebar">
+      <h2>
+        Sidebar
+        <InfoButton
+          title={sectionsInfo.sidebar.title}
+          description={sectionsInfo.sidebar.description}
+        />
+      </h2>
+
+      {/* 1) Basic Graph Info */}
+      <Accordion defaultExpanded>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <FiDatabase style={{ marginRight: 8 }} />
+          <strong>Graph & CSV Summary</strong>
+        </AccordionSummary>
+        <AccordionDetails>
+          <p><strong>Node Count:</strong> {nodeCount}</p>
+          <p><strong>Edge Count:</strong> {edgeCount}</p>
+          <p><strong>CSV Rows:</strong> {csvRows}</p>
+          <p><strong>CSV Columns:</strong> {csvCols}</p>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* 2) Download Options */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <FiDownload style={{ marginRight: 8 }} />
+          <strong>Download Graph</strong>
+        </AccordionSummary>
+        <AccordionDetails>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleDownloadJSON}
+              startIcon={<FiDownload />}
+            >
+              JSON
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleDownloadCSV}
+              startIcon={<FiDownload />}
+            >
+              CSV
+            </Button>
+          </div>
+          <p style={{ marginTop: '10px', fontSize: '0.9em' }}>
+            Downloads the current graph data (nodes, links, features) in the selected format.
+          </p>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* 3) Charts & Visualization */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <FiBarChart2 style={{ marginRight: 8 }} />
+          <strong>Node Degree Distribution</strong>
+        </AccordionSummary>
+        <AccordionDetails>
+          {degreeData.labels.length > 0 ? (
+            <div style={{ width: '100%', height: '250px' }}>
+              <Bar
+                data={{
+                  labels: degreeData.labels,
+                  datasets: [
+                    {
+                      label: 'Count of Nodes',
+                      data: degreeData.values,
+                      backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                      borderColor: 'rgba(153, 102, 255, 1)',
+                      borderWidth: 1
+                    }
+                  ]
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    x: { title: { display: true, text: 'Degree' } },
+                    y: { title: { display: true, text: 'Number of Nodes' } }
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <p>No edges or insufficient data for a degree distribution.</p>
+          )}
+        </AccordionDetails>
+      </Accordion>
+    </div>
+  );
+}
+
+export default Sidebar;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./hooks/useGraph.js:
+
+
+```
+// src/hooks/useGraph.js
+import { useState } from 'react';
+import { processData } from '../api';
+import { useNodesState, useEdgesState, addEdge } from 'react-flow-renderer';
+
+const useGraph = () => {
+  const [csvData, setCsvData] = useState([]);
+  const [columns, setColumns] = useState([]);
+  const [config, setConfig] = useState({
+    nodes: [],
+    relationships: [],
+    graph_type: 'directed',
+    features: [],
+  });
+
+  const [graphData, setGraphData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  const [nodeEditModalIsOpen, setNodeEditModalIsOpen] = useState(false);
+  const [currentNode, setCurrentNode] = useState(null);
+
+  const [relationshipModalIsOpen, setRelationshipModalIsOpen] = useState(false);
+  const [currentEdge, setCurrentEdge] = useState(null);
+
+  const [useFeatureSpace, setUseFeatureSpace] = useState(false);
+  const [featureConfigs, setFeatureConfigs] = useState([]);
+
+  const handleFileDrop = (data, fields) => {
+    setCsvData(data);
+    setColumns(fields);
+
+    // reset everything
+    setConfig({
+      nodes: [],
+      relationships: [],
+      graph_type: 'directed',
+      features: []
+    });
+    setGraphData(null);
+    setNodes([]);
+    setEdges([]);
+    setUseFeatureSpace(false);
+    setFeatureConfigs([]);
+  };
+
+  const toggleFeatureSpace = () => {
+    setUseFeatureSpace((prev) => !prev);
+  };
+
+  const handleSelectNode = (column) => {
+    const alreadySelected = config.nodes.find((n) => n.id === column);
+    if (alreadySelected) {
+      setConfig((prev) => ({
+        ...prev,
+        nodes: prev.nodes.filter((n) => n.id !== column)
+      }));
+      setNodes((ns) => ns.filter((n) => n.id !== column));
+      setEdges((es) => es.filter((e) => e.source !== column && e.target !== column));
+    } else {
+      const newNode = { id: column, type: 'default', features: {} };
+      setConfig((prev) => ({
+        ...prev,
+        nodes: [...prev.nodes, newNode]
+      }));
+      setNodes((ns) => [
+        ...ns,
+        {
+          id: column,
+          type: 'default',
+          data: { label: column },
+          position: {
+            x: Math.random() * 300,
+            y: Math.random() * 300
+          },
+          features: {}
+        }
+      ]);
+    }
+  };
+
+  const onConnectHandler = (connection) => {
+    setCurrentEdge(connection);
+    setRelationshipModalIsOpen(true);
+  };
+
+  const onSaveRelationship = ({ relationshipType }) => {
+    if (!currentEdge) return;
+
+    const newEdge = {
+      ...currentEdge,
+      label: relationshipType,
+      type: 'smoothstep'
+    };
+    setEdges((eds) => addEdge(newEdge, eds));
+
+    setConfig((prev) => ({
+      ...prev,
+      relationships: [
+        ...prev.relationships,
+        {
+          source: currentEdge.source,
+          target: currentEdge.target,
+          type: relationshipType || 'default'
+        }
+      ]
+    }));
+
+    setRelationshipModalIsOpen(false);
+    setCurrentEdge(null);
+  };
+
+  const onNodeClickHandler = (event, node) => {
+    setCurrentNode(node);
+    setNodeEditModalIsOpen(true);
+  };
+
+  const handleSaveNodeEdit = ({ nodeType, nodeFeatures }) => {
+    setConfig((prev) => {
+      const newNodes = prev.nodes.map((n) => {
+        if (n.id === currentNode.id) {
+          return {
+            ...n,
+            type: nodeType || 'default',
+            features: nodeFeatures || {}
+          };
+        }
+        return n;
+      });
+      return { ...prev, nodes: newNodes };
+    });
+
+    setNodes((ns) =>
+      ns.map((nd) => {
+        if (nd.id === currentNode.id) {
+          return {
+            ...nd,
+            type: nodeType || 'default',
+            data: { ...nd.data, label: `${nd.id} (${nodeType || 'default'})` },
+            features: nodeFeatures || {}
+          };
+        }
+        return nd;
+      })
+    );
+
+    setNodeEditModalIsOpen(false);
+    setCurrentNode(null);
+  };
+
+  // Accept labelColumn from caller
+  const handleSubmit = async (labelColumn) => {
+    if (!csvData.length || !config.nodes.length) {
+      alert('Please upload CSV and select at least one node.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const extendedConfig = {
+        ...config,
+        features: featureConfigs,
+        use_feature_space: useFeatureSpace,
+        feature_space_config: useFeatureSpace
+          ? { features: featureConfigs }
+          : {},
+        label_column: labelColumn || ''
+      };
+
+      const response = await processData(csvData, extendedConfig);
+      setGraphData(response.graph || null);
+
+      if (response.featureDataCsv) {
+        console.log('Received featureDataCsv from server', response.featureDataCsv.length, 'characters');
+      }
+    } catch (err) {
+      console.error('Error processing data:', err);
+      alert('Error processing data. See console for details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    csvData,
+    columns,
+    config,
+    graphData,
+    loading,
+    nodes,
+    edges,
+    nodeEditModalIsOpen,
+    currentNode,
+    relationshipModalIsOpen,
+    currentEdge,
+    handleFileDrop,
+    handleSelectNode,
+    handleSubmit,
+    onNodesChange,
+    onEdgesChange,
+    onConnectHandler,
+    onNodeClickHandler,
+    onSaveRelationship,
+    setNodeEditModalIsOpen,
+    setRelationshipModalIsOpen,
+    handleSaveNodeEdit,
+
+    // Feature config
+    useFeatureSpace,
+    toggleFeatureSpace,
+    featureConfigs,
+    setFeatureConfigs
+  };
+};
+
+export default useGraph;
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./index.css:
+
+
+```
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  height: 100%;
+  width: 100%;
+}
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./index.js:
+
+
+```
+/**
+ * @file index.js
+ * @description Entry point for the React application. Renders App with BrowserRouter.
+ */
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom'; 
+import './index.css';
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+);
+
+
+```
+
+
+
+### /c/Users/matth/Desktop/1-DSM/Research/SECOND-APP/frontend/src/./sectionsInfo.js:
+
+
+```
+// src/sectionsInfo.js
+
+const sectionsInfo = {
+  sidebar: {
+    title: "Sidebar Information",
+    description: `
+      <p>This sidebar can be used to navigate or display additional controls.</p>
+      <p>Currently it's just a placeholder, but you can customize it to your liking!</p>
+    `
+  },
+  configurationPanel: {
+    title: "Configuration Panel",
+    description: `
+      <p>Use this panel to select node columns and optionally define feature embeddings.</p>
+      <p>Features can include text embeddings (BERT, GloVe, Word2Vec) or numeric transformations.</p>
+      <p>When you finish, click "Process Graph" to build your network.</p>
+      <p>
+        Select which columns become <strong>nodes</strong> in the graph
+        (e.g. “tweet”, “replied_to_tweet”), and optionally create edges
+        in React Flow for relationships like “replied_to_tweet”.
+      </p>
+    `
+  },
+  featureColumns: {
+    title: "Feature Columns",
+    description: `
+      <p>Here you define how embeddings are generated. Each feature has:</p>
+      <ul>
+        <li>node_id_column: The column that identifies each node (e.g. tweet_id).</li>
+        <li>column_name: The text or numeric column for embedding.</li>
+        <li>embedding_method: BERT, GloVe, Word2Vec, etc.</li>
+      </ul>
+      <p>These features are NOT shown as separate nodes; they attach to existing nodes in the final graph.</p>
+    `
+  },
+  fileUploader: {
+    title: "CSV File Uploader",
+    description: `
+      <p>Drag & drop a CSV file, or click to browse and upload.</p>
+      <p>Ensure your CSV has a header row, as the parser expects column names.</p>
+    `
+  },
+  graphFlow: {
+    title: "React Flow Configuration",
+    description: `
+      <p>This interactive area lets you visualize and arrange your nodes. 
+      You can also draw edges between nodes to define relationships.</p>
+      <p>Right-click or drag edges to connect nodes, or click a node to edit its properties.</p>
+    `
+  },
+  processGraph: {
+    title: "Process Graph",
+    description: `
+      <p>When ready, click "Process Graph" to send data to the backend. 
+      The server will build your network (and embeddings, if configured) 
+      and return the final graph for visualization.</p>
+    `
+  },
+  graphVisualization: {
+    title: "Graph Visualization",
+    description: `
+      <p>This 2D force-directed graph shows the final network. Hover over nodes to see embeddings/features.</p>
+      <p>Directed edges have arrows, while undirected edges do not.</p>
+    `
+  }
+};
+
+export default sectionsInfo;
+
+
+```
+
+
+

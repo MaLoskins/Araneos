@@ -1,0 +1,60 @@
+// Backend Data Flow Diagram
+digraph {
+	DFG [label="DataFrameToGraph
+-------------------------
+Input:
+ - pandas.DataFrame
+ - Config (dict)
+    • nodes: [{\"id\": \"column_name\", \"type\": \"optional\"}]
+    • relationships: [{\"source\": \"col\", \"target\": \"col\", \"type\": \"optional\"}]
+ - Parameter: graph_type (\"directed\"/\"undirected\")
+Output:
+ - NetworkX Graph
+   • Nodes (id, type, features)
+   • Edges (with type)
+Data Types:
+ - DataFrame, dict, str"]
+	FSC [label="FeatureSpaceCreator
+--------------------------
+Input:
+ - pandas.DataFrame or CSV file path
+ - Config (dict)
+    • features: [
+         {
+           \"column_name\": \"col\",
+           \"type\": \"text\" or \"numeric\",
+           \"embedding_method\": \"bert\"/\"glove\"/\"word2vec\" (if text),
+           \"dim_reduction\": {\"method\": \"pca\"/\"umap\"/\"none\", \"target_dim\": int},
+           \"additional_params\": { ... }
+         },
+         { \"column_name\": \"col\", \"type\": \"numeric\", \"processing\": \"standardize\"/\"normalize\"/\"none\", \"projection\": {\"method\": \"linear\"/\"none\", \"target_dim\": int} }
+       ]
+Output:
+ - Feature Space DataFrame
+   • New columns: \"{col}_embedding\" and \"{col}_feature\"
+Data Types:
+ - DataFrame, dict"]
+	TGG [label="TorchGeometricGraphBuilder
+------------------------------
+Input:
+ - JSON (node-link format)
+    {
+      \"nodes\": [
+          {\"id\": \"str\", \"features\": {\"key\": value, \"text_embedding\": [floats], \"label\": \"optional\"}}
+      ],
+      \"links\": [
+          {\"source\": {\"id\": \"str\"}, \"target\": {\"id\": \"str\"}}
+      ]
+    }
+ - Optional training parameters (via CLI or code)
+Output:
+ - PyTorch Geometric Data Object
+   • x: node feature tensor (normalized, padded)
+   • edge_index: connectivity tensor
+   • y: labels tensor (if provided)
+   • train_mask, val_mask, test_mask
+Data Types:
+ - dict, torch.Tensor"]
+	FSC -> DFG [label="Feature columns: *_embedding, *_feature"]
+	DFG -> TGG [label="Node-link JSON conversion"]
+}

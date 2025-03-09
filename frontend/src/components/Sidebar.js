@@ -82,8 +82,6 @@ function Sidebar({ graphData, csvData }) {
 
   /**
    * Example: Download CSV version (very rough example).
-   * If you just want node embeddings or structure separately,
-   * you’d build that CSV logic here.
    */
   const handleDownloadCSV = () => {
     if (!graphData) return;

@@ -1,0 +1,104 @@
+// Backend Data Flow Diagram
+digraph {
+	fontname=Helvetica fontsize=12 rankdir=LR splines=polyline
+	FSC_Input [label="Input DataFrame
+Shape: (N, m)
+Columns: text, num" fillcolor=lightblue shape=box style=filled]
+	FSC_TextPre [label="Text Preprocessing & Tokenization
+\"raw text\" -> Tokens" fillcolor=lightyellow shape=box style=filled]
+	FSC_BERT [label="BERT Embedding
+Tokens → Embedding
+Shape: (768,)
+Equation: f: Text → ℝ^768" fillcolor=lightgreen shape=box style=filled]
+	FSC_PCA [label="Dimensionality Reduction (PCA)
+Equation: ℝ^768 → ℝ^(target_dim)
+E.g.: 768 → 2" fillcolor=lightpink shape=box style=filled]
+	FSC_TextOut [label="Output Text Embedding
+Shape: (N, target_dim)" fillcolor=lightcyan shape=box style=filled]
+	FSC_Numeric [label="Numeric Feature Processing
+Standardization/Normalization
+Input: (N,1)" fillcolor=lightgray shape=box style=filled]
+	FSC_NumOut [label="Output Numeric Feature
+Shape: (N, 1)" fillcolor=khaki shape=box style=filled]
+	FSC_Combined [label="Combined Feature Space DataFrame
+Columns: text_embedding, num_feature
+Output: (N, d_FSC)" fillcolor=wheat shape=box style=filled]
+	FSC_Input -> FSC_TextPre [label="Extract \"text\" column"]
+	FSC_TextPre -> FSC_BERT [label="Tokenized text"]
+	FSC_BERT -> FSC_PCA [label="BERT embedding
+(768-dim)"]
+	FSC_PCA -> FSC_TextOut [label="Reduce to target_dim"]
+	FSC_Input -> FSC_Numeric [label="Extract \"num\" column"]
+	FSC_Numeric -> FSC_NumOut [label=Standardize]
+	FSC_TextOut -> FSC_Combined [label="Add text_embedding"]
+	FSC_NumOut -> FSC_Combined [label="Add num_feature"]
+	DFG_Input [label="DataFrame Input
+Shape: (N, m)
+Includes: *_embedding, *_feature columns" fillcolor=lightblue shape=box style=filled]
+	DFG_Extract [label="Extract Node Features
+Extract columns ending with \"_embedding\"/\"_feature\"
+Output: Feature dict for each node
+Each vector ∈ ℝ^(d)" fillcolor=lightgreen shape=box style=filled]
+	DFG_Graph [label="Construct NetworkX Graph
+Nodes: (id, type, features)
+Edges: as per relationships
+Graph G = (V, E)" fillcolor=orange shape=box style=filled]
+	FSC_Combined -> DFG_Input [label="(Optional) Use processed DataFrame"]
+	DFG_Input -> DFG_Extract [label="Parse rows & extract features"]
+	DFG_Extract -> DFG_Graph [label="Create nodes & edges
+(E.g., node features: ℝ^(d))"]
+	TGG_Input [label="JSON Node-Link Input
+Format:
+{
+  \"nodes\": [{id, features, label}],
+  \"links\": [{source:{id}, target:{id}}]
+}" fillcolor=lightblue shape=box style=filled]
+	TGG_Mapping [label="Map Node IDs → Indices
+Output: mapping id → index" fillcolor=lightgreen shape=box style=filled]
+	TGG_Features [label="Construct Node Feature Matrix x
+Concatenate features from nodes
+Shape: (num_nodes, d)" fillcolor=lightyellow shape=box style=filled]
+	TGG_Structural [label="Add Structural Features
+(e.g., Node Degree)
+Operation: x_new = [x, deg]
+Shape: (num_nodes, d+1)" fillcolor=lightpink shape=box style=filled]
+	TGG_PCA [label="Dimensionality Reduction (PCA)
+Equation: ℝ^(d+1) → ℝ^(target_dim_TGG)
+E.g., (d+1) → 50" fillcolor=lavender shape=box style=filled]
+	TGG_Split [label="Split Data
+Create train/val/test masks
+Final PyG Data Object:
+- x: (num_nodes, final_d)
+- edge_index
+- y
+- masks" fillcolor=khaki shape=box style=filled]
+	TGG_Input -> TGG_Mapping [label="Parse JSON"]
+	TGG_Mapping -> TGG_Features [label="Build x
+Shape: (num_nodes, d)"]
+	TGG_Features -> TGG_Structural [label="Concatenate degree"]
+	TGG_Structural -> TGG_PCA [label="Apply PCA (optional)"]
+	TGG_PCA -> TGG_Split [label="Reduced x: (num_nodes, target_dim_TGG)"]
+	TGG_Features -> TGG_Split [label="If no PCA, use x as is" style=dashed]
+	Conversion [label="Conversion:
+NetworkX Graph → JSON Node-Link
+(Export G from DFG)" fillcolor=yellow shape=ellipse style=filled]
+	DFG_Graph -> Conversion [label="Export graph as JSON"]
+	Conversion -> TGG_Input [label="Feed JSON to TGG"]
+	Legend [label="Parameters from JSON Configurations:
+- FeatureSpaceCreator:
+  • Text: embedding_method (\"bert\"), dim_reduction target_dim (e.g., 2)
+  • Numeric: processing (\"standardize\"), projection (\"none\")
+- DataFrameToGraph:
+  • nodes: { \"id\": \"col\", \"type\": \"string\" }
+  • relationships: { \"source\": \"col\", \"target\": \"col\", \"type\": \"string\" }
+- TorchGeometricGraphBuilder:
+  • PCA target_dim (e.g., 50)
+  • Data splits (train/val/test ratios)
+          
+Tensor shape changes:
+- BERT embedding: ℝ^(768) → PCA → ℝ^(target_dim)
+- Numeric feature: (N,1) → (N,1)
+- Combined FSC output: (N, d_FSC), where d_FSC = target_dim (text) + 1 (numeric)
+- TGG feature matrix: (num_nodes, d) → + structural → (num_nodes, d+1) → PCA → (num_nodes, target_dim_TGG)
+" fillcolor=lightgrey shape=note style=filled]
+}
