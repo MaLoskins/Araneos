@@ -282,18 +282,3 @@ Throughout this document, we have indicated points where figures should be inclu
 
 Given the instructions, we will clearly mark where figures go, but the actual content of figures would be prepared separately (since we can't embed actual images here). The final document will likely have placeholders like:
 
-> *Figure 3: Graph Attention Network illustration.* (with some caption text)
-
-We need to ensure the numbering is consistent and captions are descriptive. The user specifically asked to "suggest visualizations such as model architecture diagrams, dataset distributions, attention weight visualizations, etc." We have done that in context. Perhaps we should enumerate them more clearly:
-
-For example:
-- **Figure 1:** Evolution of neural architectures (timeline or conceptual).
-- **Figure 2:** CNN vs GNN comparison (if we include).
-- **Figure 3:** Graph Attention mechanism (node with neighbors and attention).
-- **Figure 4:** Example rumor propagation graph (source and replies).
-- **Figure 5:** Bi-GCN model structure (two GCN flows).
-- **Figure 6:** Claim-guided Hierarchical GAT structure.
-- **Figure 7:** [Placeholder for results table].
-- **Figure 8:** Our application pipeline.
-- **Figure 9:** Performance comparison of models.
-
