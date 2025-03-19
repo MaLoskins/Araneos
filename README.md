@@ -219,9 +219,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 For questions, suggestions, or further discussion, please contact:
 
-- **Author:** Your Name  
-- **Email:** your.email@example.com  
-- **GitHub:** [your-username](https://github.com/your-username)
+- **Author:** Matthew Haskins  
+- **Email:** matthew.haskins.mh@gmail.com  
+- **GitHub:** [MaLoskins](https://https://github.com/MaLoskins)
 
 ---
 
