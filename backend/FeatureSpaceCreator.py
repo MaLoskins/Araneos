@@ -6,9 +6,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 from typing import Dict, Any, List, Optional, Union
+import urllib.request
+import zipfile
+import tempfile
+import shutil
 from gensim.models import Word2Vec
-import torchtext
-from torchtext.vocab import GloVe
 from transformers import BertModel, BertTokenizerFast
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
@@ -18,7 +20,195 @@ import warnings
 import logging
 import spacy  # Import for spaCy
 
-torchtext.disable_torchtext_deprecation_warning()
+# Custom GloVe implementation to replace torchtext
+class GloVe:
+    def __init__(self, name="6B", dim=300, cache=None):
+        """
+        Custom GloVe implementation to replace torchtext.vocab.GloVe
+        
+        Args:
+            name (str): Name of the GloVe vectors ('6B', '42B', '840B', etc.)
+            dim (int): Dimension of the vectors (50, 100, 200, 300)
+            cache (str): Directory where GloVe vectors are stored
+        """
+        self.name = name
+        self.dim = dim
+        self.cache = os.path.normpath(cache) if cache else None
+        self.stoi = {}  # String to index mapping
+        self.vectors = None  # Word vectors
+        self.itos = []  # Index to string mapping
+        
+        # Create cache directory if it doesn't exist
+        if self.cache and not os.path.exists(self.cache):
+            os.makedirs(self.cache, exist_ok=True)
+        
+        # Load GloVe vectors
+        self._load_vectors()
+    
+    def _download_glove_vectors(self):
+        """Download GloVe vectors from Stanford NLP website"""
+        if not self.cache:
+            raise ValueError("cache directory must be provided for GloVe embeddings")
+            
+        # Normalize path to handle Windows backslashes correctly
+        self.cache = os.path.normpath(self.cache)
+        
+        # Map of available GloVe vectors
+        glove_urls = {
+            "6B": {
+                50: "https://nlp.stanford.edu/data/glove.6B.zip",
+                100: "https://nlp.stanford.edu/data/glove.6B.zip",
+                200: "https://nlp.stanford.edu/data/glove.6B.zip",
+                300: "https://nlp.stanford.edu/data/glove.6B.zip"
+            },
+            "42B": {
+                300: "https://nlp.stanford.edu/data/glove.42B.300d.zip"
+            },
+            "840B": {
+                300: "https://nlp.stanford.edu/data/glove.840B.300d.zip"
+            },
+            "twitter.27B": {
+                25: "https://nlp.stanford.edu/data/glove.twitter.27B.zip",
+                50: "https://nlp.stanford.edu/data/glove.twitter.27B.zip",
+                100: "https://nlp.stanford.edu/data/glove.twitter.27B.zip",
+                200: "https://nlp.stanford.edu/data/glove.twitter.27B.zip"
+            }
+        }
+        
+        # Check if the requested vectors are available
+        if self.name not in glove_urls:
+            raise ValueError(f"GloVe vectors for '{self.name}' are not available for download")
+        
+        if self.dim not in glove_urls[self.name]:
+            raise ValueError(f"GloVe vectors for '{self.name}' with dimension {self.dim} are not available for download")
+        
+        url = glove_urls[self.name][self.dim]
+        logging.info(f"Downloading GloVe vectors from {url}")
+        
+        # Create a temporary directory for the download
+        with tempfile.TemporaryDirectory() as temp_dir:
+            zip_path = os.path.join(temp_dir, "glove.zip")
+            
+            # Download the zip file
+            logging.info("Downloading GloVe vectors... This may take a while.")
+            urllib.request.urlretrieve(url, zip_path)
+            
+            # Extract the zip file
+            logging.info("Extracting GloVe vectors...")
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+            
+            # Find the correct file in the extracted directory
+            vector_filename = f"glove.{self.name}.{self.dim}d.txt"
+            vector_filepath = os.path.join(temp_dir, vector_filename)
+            
+            # For Twitter vectors, the filename format is different
+            if self.name == "twitter.27B":
+                vector_filename = f"glove.twitter.27B.{self.dim}d.txt"
+                vector_filepath = os.path.join(temp_dir, vector_filename)
+            
+            # Copy the file to the cache directory
+            if os.path.exists(vector_filepath):
+                shutil.copy(vector_filepath, os.path.join(self.cache, vector_filename))
+                logging.info(f"GloVe vectors saved to {os.path.join(self.cache, vector_filename)}")
+            else:
+                # Try to find any glove file in the extracted directory
+                extracted_files = os.listdir(temp_dir)
+                glove_files = [f for f in extracted_files if f.startswith('glove.') and f.endswith('.txt')]
+                
+                if glove_files:
+                    for glove_file in glove_files:
+                        # Check if this file matches our dimension
+                        if f"{self.dim}d" in glove_file:
+                            shutil.copy(os.path.join(temp_dir, glove_file), os.path.join(self.cache, glove_file))
+                            logging.info(f"GloVe vectors saved to {os.path.join(self.cache, glove_file)}")
+                            return
+                    
+                    # If no file with matching dimension is found, copy the first one
+                    shutil.copy(os.path.join(temp_dir, glove_files[0]), os.path.join(self.cache, glove_files[0]))
+                    logging.info(f"GloVe vectors saved to {os.path.join(self.cache, glove_files[0])}")
+                else:
+                    raise FileNotFoundError(f"Could not find GloVe vectors in the downloaded archive")
+    
+    def _load_vectors(self):
+        """Load GloVe vectors from file"""
+        if not self.cache:
+            raise ValueError("cache directory must be provided for GloVe embeddings")
+            
+        # Normalize path to handle Windows backslashes correctly
+        self.cache = os.path.normpath(self.cache)
+        
+        # Construct the expected filename based on GloVe naming convention
+        filename = f"glove.{self.name}.{self.dim}d.txt"
+        filepath = os.path.join(self.cache, filename)
+        
+        # Check for alternative filenames if the standard one doesn't exist
+        if not os.path.exists(filepath):
+            # Try with .vec extension
+            filepath = os.path.join(self.cache, f"glove.{self.name}.{self.dim}d.vec")
+            if not os.path.exists(filepath):
+                # Try without dimension in filename
+                filepath = os.path.join(self.cache, f"glove.{self.name}.txt")
+                if not os.path.exists(filepath):
+                    # For Twitter vectors, the filename format is different
+                    if self.name == "twitter.27B":
+                        filepath = os.path.join(self.cache, f"glove.twitter.27B.{self.dim}d.txt")
+                    
+                    if not os.path.exists(filepath):
+                        # Try just looking for any glove file
+                        glove_files = [f for f in os.listdir(self.cache) if f.startswith('glove.')]
+                        if glove_files:
+                            filepath = os.path.join(self.cache, glove_files[0])
+                        else:
+                            # No GloVe vectors found, try to download them
+                            logging.info(f"No GloVe vectors found in {self.cache}. Attempting to download...")
+                            try:
+                                self._download_glove_vectors()
+                                # Try loading again after download
+                                return self._load_vectors()
+                            except Exception as e:
+                                raise FileNotFoundError(f"No GloVe vectors found in {self.cache} and download failed: {e}")
+        
+        logging.info(f"Loading GloVe vectors from {filepath}")
+        
+        # Count lines to pre-allocate memory
+        with open(filepath, 'r', encoding='utf-8') as f:
+            num_lines = sum(1 for _ in f)
+        
+        # Initialize vectors array
+        self.vectors = np.zeros((num_lines, self.dim), dtype=np.float32)
+        
+        # Load vectors
+        with open(filepath, 'r', encoding='utf-8') as f:
+            for i, line in enumerate(f):
+                try:
+                    values = line.rstrip().split(' ')
+                    word = values[0]
+                    vector = np.array([float(val) for val in values[1:]], dtype=np.float32)
+                    
+                    # Skip if vector dimension doesn't match
+                    if len(vector) != self.dim:
+                        continue
+                    
+                    self.stoi[word] = i
+                    self.itos.append(word)
+                    self.vectors[i] = vector
+                except Exception as e:
+                    logging.warning(f"Error processing line {i}: {e}")
+                    continue
+        
+        logging.info(f"Loaded {len(self.stoi)} GloVe vectors of dimension {self.dim}")
+    
+    def __getitem__(self, token):
+        """Get the embedding vector for a token"""
+        if token in self.stoi:
+            idx = self.stoi[token]
+            return torch.tensor(self.vectors[idx], dtype=torch.float)
+        else:
+            # Return zero vector for unknown tokens
+            return torch.zeros(self.dim, dtype=torch.float)
+
+# Removed torchtext deprecation warning
 warnings.filterwarnings("ignore")
 
 import random
