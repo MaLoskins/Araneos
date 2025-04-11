@@ -1,48 +1,26 @@
 # FeatureSpaceCreator.py
-import os
-import re
-import pandas as pd
-import numpy as np
-import torch
-import torch.nn as nn
-from typing import Dict, Any, List, Optional, Union
-import urllib.request
-import zipfile
-import tempfile
-import shutil
+import os,re,pandas as pd,numpy as np,torch,torch.nn as nn
+from typing import Dict,Any,List,Optional,Union
+import urllib.request,zipfile,tempfile,shutil
 from gensim.models import Word2Vec
-from transformers import BertModel, BertTokenizerFast
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from transformers import BertModel,BertTokenizerFast
+from sklearn.preprocessing import StandardScaler,MinMaxScaler
 from sklearn.decomposition import PCA
 from math import ceil
 from umap import UMAP
-import warnings
-import logging
-import spacy  # Import for spaCy
+import warnings,logging,spacy
 
 # Custom GloVe implementation to replace torchtext
 class GloVe:
-    def __init__(self, name="6B", dim=300, cache=None):
-        """
-        Custom GloVe implementation to replace torchtext.vocab.GloVe
+    def __init__(self,name="6B",dim=300,cache=None):
+        """Custom GloVe implementation to replace torchtext.vocab.GloVe"""
+        self.name=name;self.dim=dim;self.cache=os.path.normpath(cache) if cache else None
+        self.stoi={};self.vectors=None;self.itos=[]
         
-        Args:
-            name (str): Name of the GloVe vectors ('6B', '42B', '840B', etc.)
-            dim (int): Dimension of the vectors (50, 100, 200, 300)
-            cache (str): Directory where GloVe vectors are stored
-        """
-        self.name = name
-        self.dim = dim
-        self.cache = os.path.normpath(cache) if cache else None
-        self.stoi = {}  # String to index mapping
-        self.vectors = None  # Word vectors
-        self.itos = []  # Index to string mapping
+        # Create cache dir if needed
+        self.cache and not os.path.exists(self.cache) and os.makedirs(self.cache,exist_ok=True)
         
-        # Create cache directory if it doesn't exist
-        if self.cache and not os.path.exists(self.cache):
-            os.makedirs(self.cache, exist_ok=True)
-        
-        # Load GloVe vectors
+        # Load vectors
         self._load_vectors()
     
     def _download_glove_vectors(self):
@@ -132,81 +110,58 @@ class GloVe:
     
     def _load_vectors(self):
         """Load GloVe vectors from file"""
-        if not self.cache:
-            raise ValueError("cache directory must be provided for GloVe embeddings")
+        if not self.cache:raise ValueError("cache directory must be provided for GloVe embeddings")
+        
+        # Normalize path
+        self.cache=os.path.normpath(self.cache)
+        
+        # Try different filename patterns
+        filepaths=[
+            os.path.join(self.cache,f"glove.{self.name}.{self.dim}d.txt"),
+            os.path.join(self.cache,f"glove.{self.name}.{self.dim}d.vec"),
+            os.path.join(self.cache,f"glove.{self.name}.txt"),
+            os.path.join(self.cache,f"glove.twitter.27B.{self.dim}d.txt") if self.name=="twitter.27B" else None
+        ]
+        
+        # Find first existing file or any glove file
+        filepath=next((p for p in filepaths if p and os.path.exists(p)),None)
+        if not filepath:
+            # Try any glove file
+            glove_files=[f for f in os.listdir(self.cache) if f.startswith('glove.')]
+            filepath=os.path.join(self.cache,glove_files[0]) if glove_files else None
             
-        # Normalize path to handle Windows backslashes correctly
-        self.cache = os.path.normpath(self.cache)
-        
-        # Construct the expected filename based on GloVe naming convention
-        filename = f"glove.{self.name}.{self.dim}d.txt"
-        filepath = os.path.join(self.cache, filename)
-        
-        # Check for alternative filenames if the standard one doesn't exist
-        if not os.path.exists(filepath):
-            # Try with .vec extension
-            filepath = os.path.join(self.cache, f"glove.{self.name}.{self.dim}d.vec")
-            if not os.path.exists(filepath):
-                # Try without dimension in filename
-                filepath = os.path.join(self.cache, f"glove.{self.name}.txt")
-                if not os.path.exists(filepath):
-                    # For Twitter vectors, the filename format is different
-                    if self.name == "twitter.27B":
-                        filepath = os.path.join(self.cache, f"glove.twitter.27B.{self.dim}d.txt")
-                    
-                    if not os.path.exists(filepath):
-                        # Try just looking for any glove file
-                        glove_files = [f for f in os.listdir(self.cache) if f.startswith('glove.')]
-                        if glove_files:
-                            filepath = os.path.join(self.cache, glove_files[0])
-                        else:
-                            # No GloVe vectors found, try to download them
-                            logging.info(f"No GloVe vectors found in {self.cache}. Attempting to download...")
-                            try:
-                                self._download_glove_vectors()
-                                # Try loading again after download
-                                return self._load_vectors()
-                            except Exception as e:
-                                raise FileNotFoundError(f"No GloVe vectors found in {self.cache} and download failed: {e}")
+            # Download if nothing found
+            if not filepath:
+                logging.info(f"No GloVe vectors found in {self.cache}. Attempting to download...")
+                try:
+                    self._download_glove_vectors()
+                    return self._load_vectors()
+                except Exception as e:
+                    raise FileNotFoundError(f"No GloVe vectors found in {self.cache} and download failed: {e}")
         
         logging.info(f"Loading GloVe vectors from {filepath}")
         
-        # Count lines to pre-allocate memory
-        with open(filepath, 'r', encoding='utf-8') as f:
-            num_lines = sum(1 for _ in f)
-        
-        # Initialize vectors array
-        self.vectors = np.zeros((num_lines, self.dim), dtype=np.float32)
+        # Count lines & initialize
+        with open(filepath,'r',encoding='utf-8') as f:
+            num_lines=sum(1 for _ in f)
+        self.vectors=np.zeros((num_lines,self.dim),dtype=np.float32)
         
         # Load vectors
-        with open(filepath, 'r', encoding='utf-8') as f:
-            for i, line in enumerate(f):
+        with open(filepath,'r',encoding='utf-8') as f:
+            for i,line in enumerate(f):
                 try:
-                    values = line.rstrip().split(' ')
-                    word = values[0]
-                    vector = np.array([float(val) for val in values[1:]], dtype=np.float32)
-                    
-                    # Skip if vector dimension doesn't match
-                    if len(vector) != self.dim:
-                        continue
-                    
-                    self.stoi[word] = i
-                    self.itos.append(word)
-                    self.vectors[i] = vector
+                    values=line.rstrip().split(' ')
+                    word,vector=values[0],np.array([float(v) for v in values[1:]],dtype=np.float32)
+                    if len(vector)!=self.dim:continue
+                    self.stoi[word]=i;self.itos.append(word);self.vectors[i]=vector
                 except Exception as e:
                     logging.warning(f"Error processing line {i}: {e}")
-                    continue
         
         logging.info(f"Loaded {len(self.stoi)} GloVe vectors of dimension {self.dim}")
     
-    def __getitem__(self, token):
-        """Get the embedding vector for a token"""
-        if token in self.stoi:
-            idx = self.stoi[token]
-            return torch.tensor(self.vectors[idx], dtype=torch.float)
-        else:
-            # Return zero vector for unknown tokens
-            return torch.zeros(self.dim, dtype=torch.float)
+    def __getitem__(self,token):
+        """Get embedding vector for token"""
+        return torch.tensor(self.vectors[self.stoi[token]],dtype=torch.float) if token in self.stoi else torch.zeros(self.dim,dtype=torch.float)
 
 # Removed torchtext deprecation warning
 warnings.filterwarnings("ignore")
@@ -219,63 +174,49 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed_all(42)
 
 class TextPreprocessor:
-    def __init__(
-        self,
-        target_column: str = 'text',
-        include_stopwords: bool = True,
-        remove_ats: bool = True,
-        word_limit: int = 100,
-        tokenizer: Optional[Any] = None
-    ):
-        self.target_column = target_column
-        self.include_stopwords = include_stopwords
-        self.remove_ats = remove_ats
-        self.word_limit = word_limit
-        self.tokenizer = tokenizer if tokenizer else self.spacy_tokenizer
+    def __init__(self,target_column:str='text',include_stopwords:bool=True,remove_ats:bool=True,
+                word_limit:int=100,tokenizer:Optional[Any]=None):
+        self.target_column=target_column;self.include_stopwords=include_stopwords
+        self.remove_ats=remove_ats;self.word_limit=word_limit
+        self.tokenizer=tokenizer if tokenizer else self.spacy_tokenizer
 
         if include_stopwords:
             try:
-                self.nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
-                self.stop_words = self.nlp.Defaults.stop_words
+                self.nlp=spacy.load('en_core_web_sm',disable=['parser','ner'])
+                self.stop_words=self.nlp.Defaults.stop_words
             except OSError:
                 try:
                     import subprocess
-                    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"], check=True)
-                    self.nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
-                    self.stop_words = self.nlp.Defaults.stop_words
+                    subprocess.run(["python","-m","spacy","download","en_core_web_sm"],check=True)
+                    self.nlp=spacy.load('en_core_web_sm',disable=['parser','ner'])
+                    self.stop_words=self.nlp.Defaults.stop_words
                 except Exception as e:
-                    raise OSError(f"Failed to install the spaCy model 'en_core_web_sm': {e}")
-        else:
-            self.stop_words = set()
+                    raise OSError(f"Failed to install spaCy model 'en_core_web_sm': {e}")
+        else:self.stop_words=set()
 
-        self.re_pattern = re.compile(r'[^\w\s]')
-        self.at_pattern = re.compile(r'@\S+')
+        self.re_pattern=re.compile(r'[^\w\s]');self.at_pattern=re.compile(r'@\S+')
 
-    def spacy_tokenizer(self, text: str) -> List[str]:
-        doc = self.nlp(text)
-        return [token.text for token in doc]
+    def spacy_tokenizer(self,text:str)->List[str]:
+        return [t.text for t in self.nlp(text)]
 
-    def clean_text(self, df: pd.DataFrame) -> pd.DataFrame:
+    def clean_text(self,df:pd.DataFrame)->pd.DataFrame:
         if self.target_column not in df.columns:
-            raise ValueError(f"The target column '{self.target_column}' does not exist.")
+            raise ValueError(f"Target column '{self.target_column}' does not exist.")
 
-        df = df.copy()
-        df[self.target_column] = df[self.target_column].astype(str).str.lower()
-
+        df=df.copy()
+        df[self.target_column]=df[self.target_column].astype(str).str.lower()
+        
+        # Apply regex replacements
         if self.remove_ats:
-            df[self.target_column] = df[self.target_column].str.replace(self.at_pattern, '', regex=True)
-
-        df[self.target_column] = df[self.target_column].str.replace(self.re_pattern, '', regex=True)
-        df['tokenized_text'] = df[self.target_column].apply(self.tokenizer)
-
-        if self.include_stopwords:
-            df['tokenized_text'] = df['tokenized_text'].apply(
-                lambda tokens: [word for word in tokens if word not in self.stop_words and len(word) <= self.word_limit]
-            )
-        else:
-            df['tokenized_text'] = df['tokenized_text'].apply(
-                lambda tokens: [word for word in tokens if len(word) <= self.word_limit]
-            )
+            df[self.target_column]=df[self.target_column].str.replace(self.at_pattern,'',regex=True)
+        df[self.target_column]=df[self.target_column].str.replace(self.re_pattern,'',regex=True)
+        
+        # Tokenize
+        df['tokenized_text']=df[self.target_column].apply(self.tokenizer)
+        
+        # Filter tokens
+        filter_fn=lambda tokens:[w for w in tokens if (not self.include_stopwords or w not in self.stop_words) and len(w)<=self.word_limit]
+        df['tokenized_text']=df['tokenized_text'].apply(filter_fn)
 
         return df
 
@@ -367,30 +308,24 @@ class EmbeddingCreator:
         else:
             raise ValueError("Unsupported embedding method.")
 
-    def _get_average_embedding(self, tokens: List[str]) -> np.ndarray:
-        embeddings = []
-        for token in tokens:
-            if self.embedding_method == "glove" and token in self.glove.stoi:
-                embeddings.append(self.glove[token].numpy())
-            elif self.embedding_method == "word2vec" and token in self.word2vec_model.wv:
-                embeddings.append(self.word2vec_model.wv[token])
-            else:
-                continue
-        if embeddings:
-            return np.mean(embeddings, axis=0)
-        else:
-            return np.zeros(self.embedding_dim)
+    def _get_average_embedding(self,tokens:List[str])->np.ndarray:
+        # Get valid embeddings with list comprehension
+        embs=[
+            self.glove[t].numpy() if self.embedding_method=="glove" and t in self.glove.stoi else
+            self.word2vec_model.wv[t] if self.embedding_method=="word2vec" and t in self.word2vec_model.wv else
+            None for t in tokens
+        ]
+        # Filter None values and compute mean
+        valid_embs=[e for e in embs if e is not None]
+        return np.mean(valid_embs,axis=0) if valid_embs else np.zeros(self.embedding_dim)
 
-    def _get_individual_embeddings(self, tokens: List[str]) -> np.ndarray:
-        embeddings = []
-        for token in tokens:
-            if self.embedding_method == "glove" and token in self.glove.stoi:
-                embeddings.append(self.glove[token].numpy())
-            elif self.embedding_method == "word2vec" and token in self.word2vec_model.wv:
-                embeddings.append(self.word2vec_model.wv[token])
-            else:
-                embeddings.append(np.zeros(self.embedding_dim))
-        return np.array(embeddings)
+    def _get_individual_embeddings(self,tokens:List[str])->np.ndarray:
+        # One-liner with ternary operators
+        return np.array([
+            self.glove[t].numpy() if self.embedding_method=="glove" and t in self.glove.stoi else
+            self.word2vec_model.wv[t] if self.embedding_method=="word2vec" and t in self.word2vec_model.wv else
+            np.zeros(self.embedding_dim) for t in tokens
+        ])
 
     def _get_bert_embedding(self, tokens: List[str]) -> np.ndarray:
         text = ' '.join(tokens)
@@ -545,19 +480,16 @@ class FeatureSpaceCreator:
             else:
                 raise ValueError(f"Unsupported feature type: '{f_type}' in feature '{feature.get('column_name')}'.")
 
-    def process(self, dataframe: Union[str, pd.DataFrame]) -> pd.DataFrame:
-        if isinstance(dataframe, str):
-            if not os.path.exists(dataframe):
-                raise FileNotFoundError(f"CSV file not found at path: {dataframe}")
-            df = pd.read_csv(dataframe)
-            self.logger.info(f"Loaded data from '{dataframe}'.")
-        elif isinstance(dataframe, pd.DataFrame):
-            df = dataframe.copy()
-            self.logger.info("Loaded data from pandas DataFrame.")
-        else:
-            raise TypeError("dataframe must be a file path (str) or a pandas DataFrame.")
-
-        feature_space = pd.DataFrame(index=df.index)
+    def process(self,dataframe:Union[str,pd.DataFrame])->pd.DataFrame:
+        # Load data
+        df=pd.read_csv(dataframe) if isinstance(dataframe,str) and os.path.exists(dataframe) else \
+           dataframe.copy() if isinstance(dataframe,pd.DataFrame) else \
+           exec("raise TypeError(\"dataframe must be a file path (str) or a pandas DataFrame.\")")
+        
+        self.logger.info(f"Loaded data from {'file' if isinstance(dataframe,str) else 'pandas DataFrame'}.")
+        
+        # Initialize feature space
+        feature_space=pd.DataFrame(index=df.index)
         self.logger.info("Initialized feature space DataFrame.")
 
         # Process text features
@@ -600,12 +532,8 @@ class FeatureSpaceCreator:
                     embeddings.append(embeddings_chunk)
                 embeddings_array = np.vstack(embeddings)
             else:
-                # fallback: row-by-row embedding
-                embeddings = []
-                for token_list in tokens:
-                    embedding = self.embedding_creators[col].get_embedding(token_list)
-                    embeddings.append(embedding)
-                embeddings_array = np.vstack(embeddings)
+                # Vectorized embedding with list comprehension
+                embeddings_array=np.vstack([self.embedding_creators[col].get_embedding(t) for t in tokens])
 
             self.logger.info(f"Generated embeddings for text column '{col}' with shape {embeddings_array.shape}.")
 

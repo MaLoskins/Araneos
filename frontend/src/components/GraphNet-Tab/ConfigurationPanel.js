@@ -6,6 +6,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { FiList, FiSettings, FiPlay } from 'react-icons/fi';
 import InfoButton from '../InfoButton';
 import sectionsInfo from '../../sectionsInfo';
+import './ConfigurationPanel.css';
 
 /**
  * Minimal criteria to treat a feature as "complete":
@@ -104,17 +105,9 @@ const ConfigurationPanel = ({
     } = feature;
 
     return (
-      <div
-        style={{
-          background: 'var(--input-background)',
-          padding: '10px',
-          borderRadius: '4px',
-          marginBottom: '10px',
-          fontSize: '0.85rem',
-        }}
-      >
+      <div className="feature-summary">
         <strong>Feature {index + 1}</strong>
-        <div style={{ marginTop: '6px' }}>
+        <div className="feature-details">
           <p><strong>Node ID:</strong> {node_id_column}</p>
           <p><strong>Column:</strong> {column_name}</p>
           <p><strong>Type:</strong> {type}</p>
@@ -139,147 +132,165 @@ const ConfigurationPanel = ({
 
   function renderEditForm(feature, index) {
     return (
-      <div style={{ fontSize: '0.85rem' }}>
-        <label>
-          Node ID Column:
-          <select
-            value={feature.node_id_column}
-            onChange={(e) => updateFeature(index, 'node_id_column', e.target.value)}
-            required
-          >
-            <option value="">--Select--</option>
-            {columns.map((col) => (
-              <option key={col} value={col}>
-                {col}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="feature-edit-form">
+        <div className="form-group">
+          <label>
+            Node ID Column:
+            <select
+              value={feature.node_id_column}
+              onChange={(e) => updateFeature(index, 'node_id_column', e.target.value)}
+              required
+            >
+              <option value="">--Select--</option>
+              {columns.map((col) => (
+                <option key={col} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-        <label>
-          Feature Column Name:
-          <select
-            value={feature.column_name}
-            onChange={(e) => updateFeature(index, 'column_name', e.target.value)}
-            required
-          >
-            <option value="">--Select--</option>
-            {columns.map((col) => (
-              <option key={col} value={col}>
-                {col}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="form-group">
+          <label>
+            Feature Column Name:
+            <select
+              value={feature.column_name}
+              onChange={(e) => updateFeature(index, 'column_name', e.target.value)}
+              required
+            >
+              <option value="">--Select--</option>
+              {columns.map((col) => (
+                <option key={col} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-        <label>
-          Feature Type:
-          <select
-            value={feature.type}
-            onChange={(e) => updateFeature(index, 'type', e.target.value)}
-          >
-            <option value="text">Text</option>
-            <option value="numeric">Numeric</option>
-          </select>
-        </label>
+        <div className="form-group">
+          <label>
+            Feature Type:
+            <select
+              value={feature.type}
+              onChange={(e) => updateFeature(index, 'type', e.target.value)}
+            >
+              <option value="text">Text</option>
+              <option value="numeric">Numeric</option>
+            </select>
+          </label>
+        </div>
 
         {/* text-based feature config */}
         {feature.type === 'text' && (
           <>
-            <label>
-              Embedding Method:
-              <select
-                value={feature.embedding_method}
-                onChange={(e) =>
-                  updateFeature(index, 'embedding_method', e.target.value)
-                }
-              >
-                <option value="bert">BERT</option>
-                <option value="glove">GloVe</option>
-                <option value="word2vec">Word2Vec</option>
-              </select>
-            </label>
-            <label>
-              Embedding Dimension:
-              <input
-                type="number"
-                value={feature.embedding_dim}
-                onChange={(e) =>
-                  updateFeature(index, 'embedding_dim', parseInt(e.target.value))
-                }
-                placeholder="e.g., 768"
-                required
-                min="50"
-                max="2048"
-              />
-            </label>
+            <div className="form-group">
+              <label>
+                Embedding Method:
+                <select
+                  value={feature.embedding_method}
+                  onChange={(e) =>
+                    updateFeature(index, 'embedding_method', e.target.value)
+                  }
+                >
+                  <option value="bert">BERT</option>
+                  <option value="glove">GloVe</option>
+                  <option value="word2vec">Word2Vec</option>
+                </select>
+              </label>
+            </div>
+            <div className="form-group">
+              <label>
+                Embedding Dimension:
+                <input
+                  type="number"
+                  value={feature.embedding_dim}
+                  onChange={(e) =>
+                    updateFeature(index, 'embedding_dim', parseInt(e.target.value))
+                  }
+                  placeholder="e.g., 768"
+                  required
+                  min="50"
+                  max="2048"
+                />
+              </label>
+            </div>
 
             {feature.embedding_method === 'glove' && (
-              <label>
-                GloVe Cache Path:
-                <input
-                  type="text"
-                  value={feature.additional_params.glove_cache_path || ''}
-                  onChange={(e) =>
-                    updateFeature(index, 'additional_params', {
-                      ...feature.additional_params,
-                      glove_cache_path: e.target.value,
-                    })
-                  }
-                  placeholder="Path to GloVe cache"
-                  required
-                />
-              </label>
-            )}
-            {feature.embedding_method === 'word2vec' && (
-              <label>
-                Word2Vec Model Path:
-                <input
-                  type="text"
-                  value={feature.additional_params.word2vec_model_path || ''}
-                  onChange={(e) =>
-                    updateFeature(index, 'additional_params', {
-                      ...feature.additional_params,
-                      word2vec_model_path: e.target.value,
-                    })
-                  }
-                  placeholder="Path to Word2Vec model"
-                />
-              </label>
-            )}
-            {feature.embedding_method === 'bert' && (
-              <>
+              <div className="form-group">
                 <label>
-                  BERT Model Name:
+                  GloVe Cache Path:
                   <input
                     type="text"
-                    value={feature.additional_params.bert_model_name || 'bert-base-uncased'}
+                    value={feature.additional_params.glove_cache_path || ''}
                     onChange={(e) =>
                       updateFeature(index, 'additional_params', {
                         ...feature.additional_params,
-                        bert_model_name: e.target.value,
+                        glove_cache_path: e.target.value,
                       })
                     }
-                    placeholder="e.g., bert-base-uncased"
+                    placeholder="Path to GloVe cache"
                     required
                   />
                 </label>
+              </div>
+            )}
+            {feature.embedding_method === 'word2vec' && (
+              <div className="form-group">
                 <label>
-                  BERT Batch Size (optional):
+                  Word2Vec Model Path:
                   <input
-                    type="number"
-                    min="1"
-                    max="512"
-                    value={feature.additional_params.bert_batch_size || ''}
+                    type="text"
+                    value={feature.additional_params.word2vec_model_path || ''}
                     onChange={(e) =>
                       updateFeature(index, 'additional_params', {
                         ...feature.additional_params,
-                        bert_batch_size: parseInt(e.target.value) || 1,
+                        word2vec_model_path: e.target.value,
                       })
                     }
-                    placeholder="e.g., 16"
+                    placeholder="Path to Word2Vec model"
                   />
                 </label>
+              </div>
+            )}
+            {feature.embedding_method === 'bert' && (
+              <>
+                <div className="form-group">
+                  <label>
+                    BERT Model Name:
+                    <input
+                      type="text"
+                      value={feature.additional_params.bert_model_name || 'bert-base-uncased'}
+                      onChange={(e) =>
+                        updateFeature(index, 'additional_params', {
+                          ...feature.additional_params,
+                          bert_model_name: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., bert-base-uncased"
+                      required
+                    />
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label>
+                    BERT Batch Size (optional):
+                    <input
+                      type="number"
+                      min="1"
+                      max="512"
+                      value={feature.additional_params.bert_batch_size || ''}
+                      onChange={(e) =>
+                        updateFeature(index, 'additional_params', {
+                          ...feature.additional_params,
+                          bert_batch_size: parseInt(e.target.value) || 1,
+                        })
+                      }
+                      placeholder="e.g., 16"
+                    />
+                  </label>
+                </div>
               </>
             )}
           </>
@@ -288,64 +299,72 @@ const ConfigurationPanel = ({
         {/* numeric-based feature config */}
         {feature.type === 'numeric' && (
           <>
-            <label>
-              Data Type:
-              <select
-                value={feature.data_type}
-                onChange={(e) =>
-                  updateFeature(index, 'data_type', e.target.value)
-                }
-              >
-                <option value="float">Float</option>
-                <option value="int">Integer</option>
-              </select>
-            </label>
-            <label>
-              Processing:
-              <select
-                value={feature.processing}
-                onChange={(e) =>
-                  updateFeature(index, 'processing', e.target.value)
-                }
-              >
-                <option value="none">None</option>
-                <option value="standardize">Standardize</option>
-                <option value="normalize">Normalize</option>
-              </select>
-            </label>
-            <label>
-              Projection Method:
-              <select
-                value={feature.projection.method || 'none'}
-                onChange={(e) =>
-                  updateFeature(index, 'projection', {
-                    ...feature.projection,
-                    method: e.target.value,
-                  })
-                }
-              >
-                <option value="none">None</option>
-                <option value="linear">Linear</option>
-              </select>
-            </label>
-            {feature.projection.method === 'linear' && (
+            <div className="form-group">
               <label>
-                Target Dimension:
-                <input
-                  type="number"
-                  value={feature.projection.target_dim || 1}
+                Data Type:
+                <select
+                  value={feature.data_type}
+                  onChange={(e) =>
+                    updateFeature(index, 'data_type', e.target.value)
+                  }
+                >
+                  <option value="float">Float</option>
+                  <option value="int">Integer</option>
+                </select>
+              </label>
+            </div>
+            <div className="form-group">
+              <label>
+                Processing:
+                <select
+                  value={feature.processing}
+                  onChange={(e) =>
+                    updateFeature(index, 'processing', e.target.value)
+                  }
+                >
+                  <option value="none">None</option>
+                  <option value="standardize">Standardize</option>
+                  <option value="normalize">Normalize</option>
+                </select>
+              </label>
+            </div>
+            <div className="form-group">
+              <label>
+                Projection Method:
+                <select
+                  value={feature.projection.method || 'none'}
                   onChange={(e) =>
                     updateFeature(index, 'projection', {
                       ...feature.projection,
-                      target_dim: parseInt(e.target.value),
+                      method: e.target.value,
                     })
                   }
-                  placeholder="e.g., 10"
-                  required
-                  min="1"
-                  max="2048"
-                />
+                >
+                  <option value="none">None</option>
+                  <option value="linear">Linear</option>
+                </select>
               </label>
+            </div>
+            {feature.projection.method === 'linear' && (
+              <div className="form-group">
+                <label>
+                  Target Dimension:
+                  <input
+                    type="number"
+                    value={feature.projection.target_dim || 1}
+                    onChange={(e) =>
+                      updateFeature(index, 'projection', {
+                        ...feature.projection,
+                        target_dim: parseInt(e.target.value),
+                      })
+                    }
+                    placeholder="e.g., 10"
+                    required
+                    min="1"
+                    max="2048"
+                  />
+                </label>
+              </div>
             )}
           </>
         )}
@@ -364,18 +383,20 @@ const ConfigurationPanel = ({
         }}
       >
         <AccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-color)' }} />}
+          expandIcon={<ExpandMoreIcon style={{ color: 'var(--text-color)' }} />}
           sx={{
             backgroundColor: 'var(--primary-color)',
-            '& .MuiAccordionSummary-content': { alignItems: 'center' },
           }}
         >
-          <FiList style={{ marginRight: 8 }} />
-          <strong>Node Selection</strong>
-          <InfoButton
-            title={sectionsInfo.configurationPanel.title}
-            description={sectionsInfo.configurationPanel.description}
-          />
+          <div className="accordion-header-content">
+            <FiList style={{ marginRight: 8 }} />
+            <strong>Node Selection</strong>
+            <InfoButton
+              className="info-button"
+              title={sectionsInfo.configurationPanel.title}
+              description={sectionsInfo.configurationPanel.description}
+            />
+          </div>
         </AccordionSummary>
         <AccordionDetails
           sx={{
@@ -439,17 +460,20 @@ const ConfigurationPanel = ({
           }}
         >
           <AccordionSummary
-            expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-color)' }} />}
+            expandIcon={<ExpandMoreIcon style={{ color: 'var(--text-color)' }} />}
             sx={{
               backgroundColor: 'var(--primary-color)',
             }}
           >
-            <FiSettings style={{ marginRight: 8 }} />
-            <strong>Advanced Feature Creation</strong>
-            <InfoButton
-              title={sectionsInfo.featureColumns.title}
-              description={sectionsInfo.featureColumns.description}
-            />
+            <div className="accordion-header-content">
+              <FiSettings style={{ marginRight: 8 }} />
+              <strong>Advanced Feature Creation</strong>
+              <InfoButton
+                className="info-button"
+                title={sectionsInfo.featureColumns.title}
+                description={sectionsInfo.featureColumns.description}
+              />
+            </div>
           </AccordionSummary>
           <AccordionDetails
             sx={{
@@ -471,31 +495,11 @@ const ConfigurationPanel = ({
                   <div
                     key={index}
                     className="feature-config-item"
-                    style={{
-                      background: 'var(--primary-color)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '5px',
-                      padding: '12px',
-                      boxSizing: 'border-box',
-                      position: 'relative',
-                    }}
                   >
                     <button
                       type="button"
                       className="remove-feature-btn"
                       onClick={() => removeFeature(index)}
-                      style={{
-                        background: '#ff4d4d',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '4px 6px',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
-                        borderRadius: '4px',
-                        position: 'absolute',
-                        top: '8px',
-                        right: '8px',
-                      }}
                     >
                       Remove
                     </button>
@@ -505,16 +509,7 @@ const ConfigurationPanel = ({
                         {renderFeatureSummary(feature, index)}
                         <button
                           onClick={() => toggleExpand(index)}
-                          style={{
-                            marginTop: '4px',
-                            fontSize: '0.85rem',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            background: 'var(--button-background)',
-                            color: 'var(--button-text-color)',
-                            border: 'none',
-                          }}
+                          className="edit-feature-btn"
                         >
                           Edit
                         </button>
@@ -530,16 +525,7 @@ const ConfigurationPanel = ({
                         {renderEditForm(feature, index)}
                         <button
                           onClick={() => toggleExpand(index)}
-                          style={{
-                            marginTop: '6px',
-                            fontSize: '0.85rem',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            background: 'var(--button-background)',
-                            color: 'var(--button-text-color)',
-                            border: 'none',
-                          }}
+                          className="toggle-feature-btn"
                         >
                           {complete ? 'Close' : 'Done'}
                         </button>
@@ -553,16 +539,6 @@ const ConfigurationPanel = ({
               type="button"
               className="add-feature-btn"
               onClick={addFeature}
-              style={{
-                marginTop: '16px',
-                fontSize: '0.9rem',
-                padding: '6px 12px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                background: 'var(--button-background)',
-                color: 'var(--button-text-color)',
-                border: 'none',
-              }}
             >
               Add Feature
             </button>
@@ -570,42 +546,26 @@ const ConfigurationPanel = ({
         </Accordion>
       )}
 
-      <Accordion
-        sx={{
-          backgroundColor: 'var(--primary-color)',
-          color: 'var(--text-color)',
-          border: '1px solid var(--border-color)',
-        }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-color)' }} />}
-          sx={{
-            backgroundColor: 'var(--primary-color)',
-          }}
-        >
+      <div className="process-graph-section">
+        <div className="process-header">
           <FiPlay style={{ marginRight: 8 }} />
           <strong>Process Graph</strong>
           <InfoButton
+            className="info-button"
             title={sectionsInfo.processGraph.title}
             description={sectionsInfo.processGraph.description}
           />
-        </AccordionSummary>
-        <AccordionDetails
-          sx={{
-            backgroundColor: 'var(--secondary-color)',
-          }}
-        >
-          <div style={{ marginTop: '10px', textAlign: 'center' }}>
-            <button
-              onClick={() => onSubmit(labelColumn)}
-              disabled={loading || selectedNodes.length === 0}
-              style={{ marginTop: '10px' }}
-            >
-              {loading ? 'Processing...' : 'Process Graph'}
-            </button>
-          </div>
-        </AccordionDetails>
-      </Accordion>
+        </div>
+        <div className="process-content">
+          <button
+            className="process-button"
+            onClick={() => onSubmit(labelColumn)}
+            disabled={loading || selectedNodes.length === 0}
+          >
+            {loading ? 'Processing...' : 'Process Graph'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

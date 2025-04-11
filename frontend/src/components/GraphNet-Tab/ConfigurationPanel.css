@@ -1,0 +1,276 @@
+/* ConfigurationPanel.css */
+.config-section {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Reset all Material-UI accordion styles */
+.config-section .MuiAccordion-root {
+  box-shadow: none !important;
+  border-radius: 4px !important;
+  margin-bottom: 12px !important;
+}
+
+/* Force the summary to be a single row with items aligned */
+.config-section .MuiAccordionSummary-root {
+  min-height: 48px !important;
+  padding: 0 16px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+}
+
+/* Make content take up most of the space and align items */
+.config-section .MuiAccordionSummary-content {
+  margin: 12px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-grow: 1 !important;
+  max-width: calc(100% - 40px) !important; /* Leave space for arrow */
+}
+
+.config-section .MuiAccordionDetails-root {
+  padding: 16px !important;
+}
+
+/* Fix the arrow position and color */
+.config-section .MuiAccordionSummary-expandIconWrapper {
+  position: static !important; /* Not relative or absolute */
+  margin-left: 8px !important;
+  color: var(--text-color, #333) !important;
+}
+
+/* Fix arrow icon */
+.config-section .MuiAccordionSummary-expandIconWrapper svg {
+  color: var(--text-color, #333) !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* Simple rotation for expanded state */
+.config-section .MuiAccordionSummary-expandIconWrapper.Mui-expanded {
+  transform: rotate(180deg) !important;
+}
+
+/* Fix for accordion header layout */
+.accordion-header-content {
+  display: flex !important;
+  align-items: center !important;
+  flex-grow: 1 !important;
+  overflow: hidden !important; /* Prevent overflow */
+  white-space: nowrap !important; /* Keep on one line */
+}
+
+/* Feature summary styling */
+.feature-summary {
+  background: var(--input-background, #f5f5f5);
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.feature-summary:hover {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.feature-details {
+  margin-top: 8px;
+}
+
+.feature-details p {
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+/* Feature edit form styling */
+.feature-edit-form {
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-group {
+  margin-bottom: 8px;
+}
+
+.form-group label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.form-group select, 
+.form-group input {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #ccc);
+  background-color: var(--input-background, #fff);
+  font-size: 0.85rem;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.form-group select:focus, 
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent-color, #4a90e2);
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* Feature config item styling */
+.feature-config-item {
+  background: var(--primary-color, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  padding: 14px;
+  box-sizing: border-box;
+  position: relative;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.feature-config-item:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Button styling */
+.remove-feature-btn {
+  background: #ff4d4d;
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.remove-feature-btn:hover {
+  background: #ff3333;
+}
+
+.edit-feature-btn, 
+.toggle-feature-btn {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--button-background, #4a90e2);
+  color: var(--button-text-color, #fff);
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.edit-feature-btn:hover, 
+.toggle-feature-btn:hover {
+  background: var(--button-hover-background, #3a80d2);
+}
+
+.add-feature-btn {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--button-background, #4a90e2);
+  color: var(--button-text-color, #fff);
+  border: none;
+  transition: all 0.2s ease;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.add-feature-btn:hover {
+  background: var(--button-hover-background, #3a80d2);
+  transform: translateY(-1px);
+}
+
+/* Node selection styling */
+.node-selection {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+/* Process Graph Section */
+.process-graph-section {
+  background-color: var(--primary-color, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  margin-bottom: 15px;
+  overflow: hidden;
+}
+
+.process-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--primary-color, #fff);
+  color: var(--text-color, #333);
+  font-weight: 500;
+}
+
+.process-header strong {
+  margin-right: 8px;
+}
+
+.process-header .info-button {
+  margin-left: 8px;
+}
+
+.process-content {
+  padding: 20px;
+  background-color: var(--secondary-color, #f8f8f8);
+  text-align: center;
+}
+
+.node-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.node-selector input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.node-selector label {
+  cursor: pointer;
+}
+
+/* Process button styling */
+.process-button {
+  background: var(--accent-color, #4a90e2);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.process-button:hover:not(:disabled) {
+  background: var(--accent-hover-color, #3a80d2);
+  transform: translateY(-1px);
+}
+
+.process-button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}

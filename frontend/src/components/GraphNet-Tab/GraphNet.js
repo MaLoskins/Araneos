@@ -1,5 +1,5 @@
 // src/components/GraphNet-Tab/GraphNet.js
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback, useMemo } from 'react';
 import FileUploader from './FileUploader';
 import ConfigurationPanel from './ConfigurationPanel';
 import ReactFlowWrapper from './ReactFlowWrapper';
@@ -9,6 +9,12 @@ import RelationshipModal from './RelationshipModal';
 import InfoButton from '../InfoButton';
 import sectionsInfo from '../../sectionsInfo';
 
+// Memoize components for better performance
+const MemoizedFileUploader = memo(FileUploader);
+const MemoizedConfigurationPanel = memo(ConfigurationPanel);
+const MemoizedReactFlowWrapper = memo(ReactFlowWrapper);
+const MemoizedGraphVisualizer = memo(GraphVisualizer);
+const MemoizedInfoButton = memo(InfoButton);
 function GraphNet(props) {
   const {
     columns,
@@ -38,27 +44,49 @@ function GraphNet(props) {
   } = props;
 
   const [showReactFlow, setShowReactFlow] = useState(true);
+  
+  // Memoize handlers to prevent unnecessary re-renders
+  const toggleReactFlow = useCallback(() => setShowReactFlow(true), []);
+  
+  const handleSubmitWithToggle = useCallback(async (labelCol) => {
+    await handleSubmit(labelCol);
+    setShowReactFlow(false);
+  }, [handleSubmit]);
+  
+  const closeNodeEditModal = useCallback(() => setNodeEditModalIsOpen(false), [setNodeEditModalIsOpen]);
+  const closeRelationshipModal = useCallback(() => setRelationshipModalIsOpen(false), [setRelationshipModalIsOpen]);
+
+  // Memoize configuration panel props
+  const configPanelProps = useMemo(() => ({
+    columns,
+    onSelectNode: handleSelectNode,
+    onSubmit: handleSubmitWithToggle,
+    loading,
+    selectedNodes: props.config?.nodes?.map(n => n.id) || [],
+    useFeatureSpace,
+    onToggleFeatureSpace: toggleFeatureSpace,
+    featureConfigs,
+    setFeatureConfigs
+  }), [columns, handleSelectNode, handleSubmitWithToggle, loading, props.config,
+       useFeatureSpace, toggleFeatureSpace, featureConfigs, setFeatureConfigs]);
+  
+  // Memoize react flow props
+  const reactFlowProps = useMemo(() => ({
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect: onConnectHandler,
+    onNodeClick: onNodeClickHandler
+  }), [nodes, edges, onNodesChange, onEdgesChange, onConnectHandler, onNodeClickHandler]);
 
   return (
     <div className="main-content">
       <h2>Linked Graph Network</h2>
-      <FileUploader onFileDrop={handleFileDrop} />
+      <MemoizedFileUploader onFileDrop={handleFileDrop} />
 
       {columns.length > 0 && (
-        <ConfigurationPanel
-          columns={columns}
-          onSelectNode={handleSelectNode}
-          onSubmit={async (labelCol) => {
-            await handleSubmit(labelCol);
-            setShowReactFlow(false);
-          }}
-          loading={loading}
-          selectedNodes={props.config?.nodes?.map(n => n.id) || []}
-          useFeatureSpace={useFeatureSpace}
-          onToggleFeatureSpace={toggleFeatureSpace}
-          featureConfigs={featureConfigs}
-          setFeatureConfigs={setFeatureConfigs}
-        />
+        <MemoizedConfigurationPanel {...configPanelProps} />
       )}
 
       {columns.length > 0 && !showReactFlow && (
@@ -74,28 +102,21 @@ function GraphNet(props) {
         <>
           <h3 className="accent-text-center" style={{ marginTop: '20px' }}>
             React Flow Configuration
-            <InfoButton
+            <MemoizedInfoButton
               title={sectionsInfo.graphFlow.title}
               description={sectionsInfo.graphFlow.description}
             />
           </h3>
-          <ReactFlowWrapper
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnectHandler}
-            onNodeClick={onNodeClickHandler}
-          />
+          <MemoizedReactFlowWrapper {...reactFlowProps} />
         </>
       )}
 
-      {graphData && <GraphVisualizer graphData={graphData} />}
+      {graphData && <MemoizedGraphVisualizer graphData={graphData} />}
 
       {currentNode && (
         <NodeEditModal
           isOpen={nodeEditModalIsOpen}
-          onRequestClose={() => setNodeEditModalIsOpen(false)}
+          onRequestClose={closeNodeEditModal}
           node={currentNode}
           onSaveNodeEdit={handleSaveNodeEdit}
         />
@@ -104,12 +125,12 @@ function GraphNet(props) {
       {currentEdge && relationshipModalIsOpen && (
         <RelationshipModal
           isOpen={relationshipModalIsOpen}
-          onRequestClose={() => setRelationshipModalIsOpen(false)}
+          onRequestClose={closeRelationshipModal}
           onSaveRelationship={onSaveRelationship}
         />
       )}
     </div>
   );
 }
-
-export default GraphNet;
+// Export memoized component for better performance
+export default memo(GraphNet);

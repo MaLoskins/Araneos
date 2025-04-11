@@ -1,11 +1,15 @@
 // src/App.js
-import React from 'react';
+import React, { memo } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import GraphNet from './components/GraphNet-Tab/GraphNet';
 import useGraph from './hooks/useGraph';
 import './App.css';
+
+// Memoize components for better performance
+const MemoizedHeader = memo(Header);
+const MemoizedSidebar = memo(Sidebar);
 
 function App() {
   // 1) Use the same custom hook at the top level.
@@ -38,18 +42,17 @@ function App() {
     setFeatureConfigs,
   } = useGraph();
 
+  // Optimize rendering by using React.useMemo for expensive calculations
+  const sidebarProps = React.useMemo(() => ({
+    graphData,
+    csvData
+  }), [graphData, csvData]);
+
   return (
     <div className="app-container">
-      <Header />
+      <MemoizedHeader />
       <div className="main-layout">
-        {/*
-          2) Pass graphData and csvData (and any other needed props)
-             into the Sidebar so it can show stats.
-        */}
-        <Sidebar
-          graphData={graphData}
-          csvData={csvData}
-        />
+        <MemoizedSidebar {...sidebarProps} />
 
         <div className="content">
           <Routes>
@@ -94,4 +97,5 @@ function App() {
   );
 }
 
-export default App;
+// Export memoized component for better performance
+export default memo(App);

@@ -1,272 +1,143 @@
 # TorchGeometricGraphBuilder.py
+"""PyTorch Geometric graph builder with GNN architectures"""
 
-"""
-TorchGeometricGraphBuilder
-==========================
-- Parses JSON node-link data into a PyTorch Geometric Data object.
-- Defines multiple GNN architectures (GCN, GraphSAGE, GAT, GIN, ChebConv, ResidualGCN).
-- Also includes a Naive Bayes baseline (using scikit-learn).
-- Splits data into training, validation, and test sets.
-- Trains each model with early stopping (GNNs) or single-pass (Naive Bayes),
-  class weighting, and learning rate scheduling (for GNNs).
-- Evaluates model performance with detailed classification reports.
-- Visualizes node embeddings.
-- Analyzes misclassifications.
-- Implements ensemble methods for improved performance.
-"""
-
-import json
-import os
-import random
-import numpy as np
-import matplotlib.pyplot as plt
-import umap
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import json,os,random,numpy as np,matplotlib.pyplot as plt,umap,torch,torch.nn as nn,torch.nn.functional as F
 from torch_geometric.data import Data
 from torch_geometric.utils import degree
-from torch_geometric.nn import GCNConv, SAGEConv, GATConv, GINConv, ChebConv
-
+from torch_geometric.nn import GCNConv,SAGEConv,GATConv,GINConv,ChebConv
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score,classification_report
 from sklearn.utils import class_weight
 from sklearn.decomposition import PCA
-
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-
-# --------------- Additional Import for Naive Bayes Baseline ---------------
 from sklearn.naive_bayes import GaussianNB
 
-
-# ------------------------- Reproducibility Setup ------------------------- #
-def set_seed(seed: int = 42):
-    """
-    Set random seed for reproducibility.
-    """
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-
+# Reproducibility
+def set_seed(seed:int=42):
+    """Set random seed for reproducibility"""
+    random.seed(seed);np.random.seed(seed);torch.manual_seed(seed);torch.cuda.manual_seed_all(seed)
 set_seed(42)
 
-# ------------------------ Device Configuration --------------------------- #
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# Device config
+device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
-# ------------------------- Naive Bayes Baseline -------------------------- #
+# Naive Bayes Baseline
 class NaiveBayesBaseline:
-    """
-    A scikit-learn GaussianNB baseline for node classification.
-    Ignores edge structure and uses only node features.
-    """
-    def __init__(self):
-        self.clf = GaussianNB()
+    """GaussianNB baseline for node classification"""
+    def __init__(self):self.clf=GaussianNB()
+    def fit(self,X,y):self.clf.fit(X,y)
+    def predict(self,X):return self.clf.predict(X)
 
-    def fit(self, X, y):
-        self.clf.fit(X, y)
-
-    def predict(self, X):
-        return self.clf.predict(X)
-
-# ---------------------- Naive Bayes Helpers ------------------------------ #
-def train_naive_bayes(model: NaiveBayesBaseline, data: Data):
-    """
-    Train (fit) our scikit-learn Naive Bayes model on the training set.
-    model: An instance of NaiveBayesBaseline.
-    data: PyG Data object with .x, .y, and train_mask, etc.
-    """
-    x_train = data.x[data.train_mask].cpu().numpy()
-    y_train = data.y[data.train_mask].cpu().numpy()
-
-    # Filter out unlabeled (-1) if any
-    valid_indices = (y_train != -1)
-    x_train = x_train[valid_indices]
-    y_train = y_train[valid_indices]
-
-    model.fit(x_train, y_train)
+# Naive Bayes Helpers
+def train_naive_bayes(model:NaiveBayesBaseline,data:Data):
+    """Train Naive Bayes model on training set"""
+    x_train,y_train=data.x[data.train_mask].cpu().numpy(),data.y[data.train_mask].cpu().numpy()
+    valid_idx=y_train!=-1
+    model.fit(x_train[valid_idx],y_train[valid_idx])
     return model
 
-def validate_naive_bayes(model: NaiveBayesBaseline, data: Data):
-    """
-    Returns validation accuracy for the Naive Bayes model.
-    """
-    x_val = data.x[data.val_mask].cpu().numpy()
-    y_val = data.y[data.val_mask].cpu().numpy()
+def validate_naive_bayes(model:NaiveBayesBaseline,data:Data):
+    """Get validation accuracy for Naive Bayes"""
+    x_val,y_val=data.x[data.val_mask].cpu().numpy(),data.y[data.val_mask].cpu().numpy()
+    valid_idx=y_val!=-1
+    return accuracy_score(y_val[valid_idx],model.predict(x_val[valid_idx]))
 
-    valid_indices = (y_val != -1)
-    x_val = x_val[valid_indices]
-    y_val = y_val[valid_indices]
-
-    y_pred = model.predict(x_val)
-    acc = accuracy_score(y_val, y_pred)
-    return acc
-
-def test_naive_bayes(model: NaiveBayesBaseline, data: Data):
-    """
-    Evaluate the Naive Bayes model on the test set and print a classification report.
-    Returns test accuracy.
-    """
-    x_test = data.x[data.test_mask].cpu().numpy()
-    y_test = data.y[data.test_mask].cpu().numpy()
-
-    valid_indices = (y_test != -1)
-    x_test = x_test[valid_indices]
-    y_test = y_test[valid_indices]
-
-    y_pred = model.predict(x_test)
-    acc = accuracy_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred, digits=4)
-    print(f"Test Accuracy (Naive Bayes): {acc:.4f}")
-    print("Classification Report (Naive Bayes):")
-    print(report)
+def test_naive_bayes(model:NaiveBayesBaseline,data:Data):
+    """Evaluate Naive Bayes on test set"""
+    x_test,y_test=data.x[data.test_mask].cpu().numpy(),data.y[data.test_mask].cpu().numpy()
+    valid_idx=y_test!=-1
+    x_test,y_test=x_test[valid_idx],y_test[valid_idx]
+    y_pred=model.predict(x_test)
+    acc=accuracy_score(y_test,y_pred)
+    report=classification_report(y_test,y_pred,digits=4)
+    print(f"Test Accuracy (Naive Bayes): {acc:.4f}\nClassification Report (Naive Bayes):\n{report}")
     return acc
 
 
-# ---------------------------- GNN Model Classes --------------------------- #
+# GNN Model Classes
 class GCNModel(nn.Module):
-    """
-    Graph Convolutional Network (GCN) for Node Classification.
-    """
-    def __init__(self, in_channels: int, hidden_channels: int, out_channels: int, dropout: float = 0.3):
-        super(GCNModel, self).__init__()
-        self.conv1 = GCNConv(in_channels, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, out_channels)
-        self.dropout = dropout
+    """Graph Convolutional Network for Node Classification"""
+    def __init__(self,in_channels:int,hidden_channels:int,out_channels:int,dropout:float=0.3):
+        super(GCNModel,self).__init__()
+        self.conv1=GCNConv(in_channels,hidden_channels)
+        self.conv2=GCNConv(hidden_channels,out_channels)
+        self.dropout=dropout
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.conv2(x, edge_index)
-        return x  # raw logits
+    def forward(self,x,edge_index):
+        x=F.dropout(F.relu(self.conv1(x,edge_index)),p=self.dropout,training=self.training)
+        return self.conv2(x,edge_index)
 
 class ResidualGCNModel(nn.Module):
-    """
-    Residual Graph Convolutional Network (Residual GCN) for Node Classification.
-    """
-    def __init__(self, in_channels: int, hidden_channels: int, out_channels: int, dropout: float = 0.3):
-        super(ResidualGCNModel, self).__init__()
-        self.conv1 = GCNConv(in_channels, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        self.conv3 = GCNConv(hidden_channels, out_channels)
-        self.dropout = dropout
-        
-        # Linear layer to match dimensions for residual connection
-        if in_channels != out_channels:
-            self.residual_transform = nn.Linear(in_channels, out_channels)
-        else:
-            self.residual_transform = None
+    """Residual GCN for Node Classification"""
+    def __init__(self,in_channels:int,hidden_channels:int,out_channels:int,dropout:float=0.3):
+        super(ResidualGCNModel,self).__init__()
+        self.conv1=GCNConv(in_channels,hidden_channels)
+        self.conv2=GCNConv(hidden_channels,hidden_channels)
+        self.conv3=GCNConv(hidden_channels,out_channels)
+        self.dropout=dropout
+        self.residual_transform=nn.Linear(in_channels,out_channels) if in_channels!=out_channels else None
 
-    def forward(self, x, edge_index):
-        residual = x
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-
-        x = self.conv3(x, edge_index)
-
-        if self.residual_transform:
-            residual = self.residual_transform(residual)
-
-        x += residual
-        return x
+    def forward(self,x,edge_index):
+        residual=x
+        x=F.dropout(F.relu(self.conv1(x,edge_index)),p=self.dropout,training=self.training)
+        x=F.dropout(F.relu(self.conv2(x,edge_index)),p=self.dropout,training=self.training)
+        x=self.conv3(x,edge_index)
+        if self.residual_transform:residual=self.residual_transform(residual)
+        return x+residual
 
 class GraphSageModel(nn.Module):
-    """
-    GraphSAGE for Node Classification.
-    """
-    def __init__(self, in_channels: int, hidden_channels: int, out_channels: int, dropout: float = 0.3):
-        super(GraphSageModel, self).__init__()
-        self.conv1 = SAGEConv(in_channels, hidden_channels)
-        self.conv2 = SAGEConv(hidden_channels, out_channels)
-        self.dropout = dropout
+    """GraphSAGE for Node Classification"""
+    def __init__(self,in_channels:int,hidden_channels:int,out_channels:int,dropout:float=0.3):
+        super(GraphSageModel,self).__init__()
+        self.conv1=SAGEConv(in_channels,hidden_channels)
+        self.conv2=SAGEConv(hidden_channels,out_channels)
+        self.dropout=dropout
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.conv2(x, edge_index)
-        return x
+    def forward(self,x,edge_index):
+        return self.conv2(F.dropout(F.relu(self.conv1(x,edge_index)),p=self.dropout,training=self.training),edge_index)
 
 class GATModel(nn.Module):
-    """
-    Graph Attention Network (GAT) for Node Classification.
-    """
-    def __init__(self, in_channels: int, hidden_channels: int, out_channels: int, heads: int = 8, dropout: float = 0.6):
-        super(GATModel, self).__init__()
-        self.conv1 = GATConv(in_channels, hidden_channels, heads=heads, dropout=dropout)
-        self.conv2 = GATConv(hidden_channels * heads, out_channels, heads=1, concat=False, dropout=dropout)
-        self.dropout = dropout
+    """Graph Attention Network for Node Classification"""
+    def __init__(self,in_channels:int,hidden_channels:int,out_channels:int,heads:int=8,dropout:float=0.6):
+        super(GATModel,self).__init__()
+        self.conv1=GATConv(in_channels,hidden_channels,heads=heads,dropout=dropout)
+        self.conv2=GATConv(hidden_channels*heads,out_channels,heads=1,concat=False,dropout=dropout)
+        self.dropout=dropout
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.elu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.conv2(x, edge_index)
-        return x
+    def forward(self,x,edge_index):
+        return self.conv2(F.dropout(F.elu(self.conv1(x,edge_index)),p=self.dropout,training=self.training),edge_index)
 
 class GINModel(nn.Module):
-    """
-    Graph Isomorphism Network (GIN) for Node Classification.
-    """
-    def __init__(self, in_channels: int, hidden_channels: int, out_channels: int, dropout: float = 0.3):
-        super(GINModel, self).__init__()
-        nn1 = nn.Sequential(
-            nn.Linear(in_channels, hidden_channels),
-            nn.ReLU(),
-            nn.Linear(hidden_channels, hidden_channels)
-        )
-        self.conv1 = GINConv(nn1)
-        
-        nn2 = nn.Sequential(
-            nn.Linear(hidden_channels, hidden_channels),
-            nn.ReLU(),
-            nn.Linear(hidden_channels, hidden_channels)
-        )
-        self.conv2 = GINConv(nn2)
-        self.linear = nn.Linear(hidden_channels, out_channels)
-        self.dropout = dropout
+    """Graph Isomorphism Network for Node Classification"""
+    def __init__(self,in_channels:int,hidden_channels:int,out_channels:int,dropout:float=0.3):
+        super(GINModel,self).__init__()
+        self.conv1=GINConv(nn.Sequential(nn.Linear(in_channels,hidden_channels),nn.ReLU(),nn.Linear(hidden_channels,hidden_channels)))
+        self.conv2=GINConv(nn.Sequential(nn.Linear(hidden_channels,hidden_channels),nn.ReLU(),nn.Linear(hidden_channels,hidden_channels)))
+        self.linear=nn.Linear(hidden_channels,out_channels)
+        self.dropout=dropout
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        x = self.linear(x)
-        return x
+    def forward(self,x,edge_index):
+        x=F.dropout(F.relu(self.conv1(x,edge_index)),p=self.dropout,training=self.training)
+        return self.linear(F.relu(self.conv2(x,edge_index)))
 
 class ChebConvModel(nn.Module):
-    """
-    Chebyshev Convolution Network for Node Classification.
-    """
-    def __init__(self, in_channels: int, hidden_channels: int, out_channels: int, K: int = 3, dropout: float = 0.3):
-        super(ChebConvModel, self).__init__()
-        self.conv1 = ChebConv(in_channels, hidden_channels, K=K)
-        self.conv2 = ChebConv(hidden_channels, out_channels, K=K)
-        self.dropout = dropout
+    """Chebyshev Convolution Network for Node Classification"""
+    def __init__(self,in_channels:int,hidden_channels:int,out_channels:int,K:int=3,dropout:float=0.3):
+        super(ChebConvModel,self).__init__()
+        self.conv1=ChebConv(in_channels,hidden_channels,K=K)
+        self.conv2=ChebConv(hidden_channels,out_channels,K=K)
+        self.dropout=dropout
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.conv2(x, edge_index)
-        return x
+    def forward(self,x,edge_index):
+        return self.conv2(F.dropout(F.relu(self.conv1(x,edge_index)),p=self.dropout,training=self.training),edge_index)
 
-# ------------------------ Graph Builder Class ---------------------------- #
+# Graph Builder Class
 class TorchGeometricGraphBuilder:
-    """
-    Builds a PyG Data object from node-link JSON data.
-    """
-    def __init__(self, data_json: dict):
-        self.data_json = data_json
-        self.node_id_map = {}
+    """Builds PyG Data object from node-link JSON"""
+    def __init__(self,data_json:dict):
+        self.data_json=data_json
+        self.node_id_map={}
 
     def build_data(self) -> Data:
         """
@@ -356,39 +227,26 @@ class TorchGeometricGraphBuilder:
         return data
 
     @staticmethod
-    def _to_tensor(list_of_lists, dtype=torch.float):
-        """
-        Pad lists with zeros to ensure uniform length and convert to a Tensor.
-        """
-        max_len = max(len(row) for row in list_of_lists)
-        padded = []
-        for row in list_of_lists:
-            row_padded = row + [0.0]*(max_len - len(row))
-            padded.append(row_padded)
-        return torch.tensor(padded, dtype=dtype)
+    def _to_tensor(list_of_lists,dtype=torch.float):
+        """Pad lists with zeros and convert to Tensor"""
+        max_len=max(len(row) for row in list_of_lists)
+        return torch.tensor([row+[0.0]*(max_len-len(row)) for row in list_of_lists],dtype=dtype)
 
     @staticmethod
-    def _normalize_features(x: torch.Tensor) -> torch.Tensor:
-        """
-        Normalizes node features to have zero mean and unit variance.
-        """
-        mean = x.mean(dim=0, keepdim=True)
-        std = x.std(dim=0, keepdim=True) + 1e-6
-        return (x - mean) / std
+    def _normalize_features(x:torch.Tensor)->torch.Tensor:
+        """Normalize features to zero mean and unit variance"""
+        mean,std=x.mean(dim=0,keepdim=True),x.std(dim=0,keepdim=True)+1e-6
+        return (x-mean)/std
 
 
 # -------------------------- PCA Function ----------------------- #
-def reduce_feature_dimensions(x: torch.Tensor, n_components: int = 50) -> torch.Tensor:
-    """
-    Reduces feature dimensions using PCA.
-    """
+def reduce_feature_dimensions(x:torch.Tensor,n_components:int=50)->torch.Tensor:
+    """Reduce feature dimensions with PCA"""
     try:
-        pca = PCA(n_components=n_components, random_state=42)
-        x_np = x.cpu().numpy()
-        x_reduced = pca.fit_transform(x_np)
-        return torch.tensor(x_reduced, dtype=torch.float).to(x.device)
+        return torch.tensor(PCA(n_components=n_components,random_state=42).fit_transform(x.cpu().numpy()),
+                           dtype=torch.float).to(x.device)
     except Exception as e:
-        print(f"Error during PCA dimensionality reduction: {e}")
+        print(f"Error during PCA: {e}")
         raise e
 
 # -------------------------- Data Splitting Function ------------------------ #
@@ -436,56 +294,41 @@ def split_data(data: Data, train_ratio: float = 0.8, val_ratio: float = 0.1, tes
 
 
 # ---------------------- GNN Training and Evaluation ----------------------- #
-def train(model: nn.Module, data: Data, optimizer, criterion, epoch: int, edge_drop_prob: float = 0.0):
-    """
-    Trains the GNN model for one epoch.
-    """
-    model.train()
-    optimizer.zero_grad()
-
-    # optional edge drop
-    if edge_drop_prob > 0.0:
-        edge_mask = torch.rand(data.edge_index.size(1)) > edge_drop_prob
-        edge_index = data.edge_index[:, edge_mask]
-    else:
-        edge_index = data.edge_index
-
-    out = model(data.x, edge_index)
-    loss = criterion(out[data.train_mask], data.y[data.train_mask])
+def train(model:nn.Module,data:Data,optimizer,criterion,epoch:int,edge_drop_prob:float=0.0):
+    """Train GNN model for one epoch"""
+    model.train();optimizer.zero_grad()
+    
+    # Edge dropout
+    edge_index=data.edge_index[:,torch.rand(data.edge_index.size(1))>edge_drop_prob] if edge_drop_prob>0 else data.edge_index
+    
+    # Forward, backward, optimize
+    out=model(data.x,edge_index)
+    loss=criterion(out[data.train_mask],data.y[data.train_mask])
     loss.backward()
-    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+    torch.nn.utils.clip_grad_norm_(model.parameters(),max_norm=1.0)
     optimizer.step()
     return loss.item()
 
-def validate(model: nn.Module, data: Data, criterion):
-    """
-    Validates the GNN model on the validation set.
-    """
+def validate(model:nn.Module,data:Data,criterion):
+    """Validate GNN model on validation set"""
     model.eval()
     with torch.no_grad():
-        out = model(data.x, data.edge_index)
-        loss = criterion(out[data.val_mask], data.y[data.val_mask])
-    return loss.item()
+        return criterion(model(data.x,data.edge_index)[data.val_mask],data.y[data.val_mask]).item()
 
-def test(model: nn.Module, data: Data):
-    """
-    Tests the GNN model on the test set.
-    """
+def test(model:nn.Module,data:Data):
+    """Test GNN model on test set"""
     model.eval()
     with torch.no_grad():
-        out = model(data.x, data.edge_index)
-        pred = out.argmax(dim=1).cpu().numpy()
-        y_true = data.y.cpu().numpy()
-
-        test_mask = data.test_mask.cpu().numpy()
-        y_pred = pred[test_mask]
-        y_true_test = y_true[test_mask]
-
-        acc = accuracy_score(y_true_test, y_pred)
-        report = classification_report(y_true_test, y_pred, digits=4)
-    print(f"Test Accuracy: {acc:.4f}")
-    print("Classification Report:")
-    print(report)
+        pred=model(data.x,data.edge_index).argmax(dim=1).cpu().numpy()
+        y_true=data.y.cpu().numpy()
+        
+        test_mask=data.test_mask.cpu().numpy()
+        y_pred,y_true_test=pred[test_mask],y_true[test_mask]
+        
+        acc=accuracy_score(y_true_test,y_pred)
+        report=classification_report(y_true_test,y_pred,digits=4)
+    
+    print(f"Test Accuracy: {acc:.4f}\nClassification Report:\n{report}")
     return acc
 
 
