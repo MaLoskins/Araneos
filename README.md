@@ -1,4 +1,5 @@
-# Dynagraph: Dynamic Graph Application for GNNs
+# Araneos: A Dynamic Graph Intelligence Platform for GNN-Driven Data Modeling
+
 
 [![Python](https://img.shields.io/badge/Python-3.10.11-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react&logoColor=white)](https://reactjs.org/)
@@ -12,7 +13,7 @@ A comprehensive Graph Neural Network (GNN) application for transforming tabular 
 
 ## 📋 Table of Contents
 
-- [Dynagraph: Dynamic Graph Application for GNNs](#dynagraph-dynamic-graph-application-for-gnns)
+- [Araneos: A Dynamic Graph Intelligence Platform for GNN-Driven Data Modeling](#araneos-a-dynamic-graph-intelligence-platform-for-gnn-driven-data-modeling)
   - [📋 Table of Contents](#-table-of-contents)
   - [🔍 Overview](#-overview)
   - [✨ Features](#-features)
