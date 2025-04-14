@@ -1,229 +1,245 @@
-# Dynagh: Dynamic Geometric Data Creation for Geometric Neural Networks
+# Dynagraph: Dynamic Graph Application for GNNs
 
-Dynagh is a comprehensive research and development tool designed for the dynamic creation of geometric (graph) data from tabular (CSV) inputs. The application transforms raw CSV data into structured graph representations with rich feature embeddings—using techniques such as BERT, GloVe, or Word2Vec—that can be fed into geometric neural networks (GNNs). The tool also provides an interactive frontend for configuring nodes and relationships and visualizing the resulting graphs.
+[![Python](https://img.shields.io/badge/Python-3.10.11-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react&logoColor=white)](https://reactjs.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.3.0-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.4-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Maintenance](https://img.shields.io/badge/Maintained-yes-green.svg)](https://github.com/MaLoskins/GNN-Application/graphs/commit-activity)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/MaLoskins/GNN-Application/pulls)
 
----
+A comprehensive Graph Neural Network (GNN) application for transforming tabular data into graph representations with rich feature embeddings for machine learning and network analysis.
 
-## Table of Contents
+## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Codebase Structure](#codebase-structure)
-  - [Backend](#backend)
-  - [Frontend](#frontend)
-- [Installation](#installation)
-  - [Prerequisites](#prerequisites)
-  - [Backend Setup](#backend-setup)
-  - [Frontend Setup](#frontend-setup)
-- [Usage](#usage)
-  - [Running the Backend](#running-the-backend)
-  - [Running the Frontend](#running-the-frontend)
-  - [Workflow Overview](#workflow-overview)
-- [Advanced Configuration](#advanced-configuration)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+- [Dynagraph: Dynamic Graph Application for GNNs](#dynagraph-dynamic-graph-application-for-gnns)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [🔍 Overview](#-overview)
+  - [✨ Features](#-features)
+  - [🏗️ System Architecture](#️-system-architecture)
+  - [🔄 Data Processing Pipeline](#-data-processing-pipeline)
+  - [🛠️ Technologies Used](#️-technologies-used)
+    - [Backend](#backend)
+    - [Frontend](#frontend)
+  - [📥 Installation](#-installation)
+    - [Prerequisites](#prerequisites)
+    - [Backend Setup](#backend-setup)
+    - [Frontend Setup](#frontend-setup)
+  - [🚀 Usage](#-usage)
+    - [Running the Application](#running-the-application)
+    - [Workflow](#workflow)
+  - [📁 Project Structure](#-project-structure)
+  - [👨‍💻 About the Author](#-about-the-author)
 
----
+## 🔍 Overview
 
-## Overview
+This GNN-Application is a powerful tool designed for researchers and data scientists working with graph neural networks. It provides a seamless way to transform tabular data (CSV) into graph representations with rich feature embeddings that can be used for various machine learning tasks.
 
-Dynagh is built to assist researchers and developers in creating and experimenting with geometric data for neural network applications. The tool:
-  
-- **Transforms CSV Data:** Converts tabular data into graphs using configurable node and relationship mappings.
-- **Generates Feature Embeddings:** Uses a variety of embedding methods (BERT, GloVe, Word2Vec) and processing techniques (standardization, normalization, dimensionality reduction via PCA/UMAP) to attach rich feature representations to nodes.
-- **Supports GNN Training:** Provides a suite of GNN architectures—including GCN, GraphSAGE, GAT, GIN, ChebConv, and a Residual GCN—as well as a Naive Bayes baseline for node classification, complete with training, evaluation, visualization, and ensemble methods.
-- **Offers an Interactive Frontend:** A React-based interface lets users upload CSV files, select configuration options for graph creation, and visualize the resulting network via interactive graph layouts and React Flow.
+The application consists of:
 
-This tool is ideal for anyone looking to dynamically generate and process graph data for research in geometric neural networks or related fields.
+- A **Python backend** that handles data processing, graph construction, and feature embedding generation
+- A **React frontend** that provides an intuitive interface for data upload, graph configuration, and visualization
+- Integration with **PyTorch Geometric** for implementing various GNN architectures
 
----
+Whether you're exploring network structures, analyzing relationships in your data, or developing new GNN models, this application provides the tools you need to streamline your workflow.
 
-## Features
+## ✨ Features
 
-- **Dynamic Graph Construction:** Automatically builds graph structures from CSV data based on user-defined node and relationship configurations.
-- **Feature Space Creation:** Supports advanced feature engineering with text preprocessing, embedding generation, and dimensionality reduction.
-- **Multiple Embedding Methods:** Choose between BERT, GloVe, or Word2Vec for generating text embeddings.
-- **GNN Architectures:** Implements multiple GNN models along with a Naive Bayes baseline for comparative studies.
-- **Visualization & Interaction:** Interactive React frontend using React Flow and force-directed graphs for real-time configuration and analysis.
-- **Robust Logging & Error Handling:** Detailed logging throughout the backend helps track data processing, feature generation, and graph construction.
-- **Customizable & Extensible:** Modular codebase that can be easily extended to include additional processing steps or new model architectures.
+- **Dynamic Graph Construction**: Convert CSV data into graph structures with configurable node and relationship mappings
+- **Advanced Feature Engineering**: Generate rich feature embeddings using techniques like BERT, GloVe, or Word2Vec
+- **Interactive Visualization**: Explore and manipulate graph structures through an intuitive React interface
+- **Multiple GNN Architectures**: Implement and experiment with various GNN models including GCN, GraphSAGE, GAT, and more
+- **Customizable Processing Pipeline**: Configure preprocessing steps, embedding methods, and dimensionality reduction techniques
+- **Real-time Graph Manipulation**: Edit nodes, create relationships, and see changes reflected instantly
+- **Data Export Options**: Download processed graph data in various formats for further analysis
 
----
+## 🏗️ System Architecture
 
-## Codebase Structure
+The following diagram illustrates the overall system architecture, showing how the frontend and backend components interact:
 
-The repository is divided into two main parts:
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend (React)"]
+        UI[User Interface]
+        FC[File Component]
+        GC[Graph Configuration]
+        VZ[Visualization]
+        API[API Client]
+    end
+    
+    subgraph Backend["Backend (FastAPI)"]
+        EP[API Endpoints]
+        DP[Data Processing]
+        GG[Graph Generation]
+        FE[Feature Embedding]
+        TG[PyTorch Geometric]
+    end
+    
+    UI --> FC
+    FC --> GC
+    GC --> API
+    API --> EP
+    EP --> DP
+    DP --> GG
+    GG --> FE
+    FE --> TG
+    TG --> EP
+    EP --> API
+    API --> VZ
+    VZ --> UI
+    
+    style Frontend fill:#61DAFB20,stroke:#61DAFB
+    style Backend fill:#EE4C2C20,stroke:#EE4C2C
+```
+
+## 🔄 Data Processing Pipeline
+
+The diagram below shows the data flow through the GNN application, from file upload to graph visualization:
+
+```mermaid
+flowchart LR
+    CSV[CSV Upload] --> DP[Data Parsing]
+    DP --> NC[Node Configuration]
+    NC --> RC[Relationship Configuration]
+    RC --> FG[Feature Generation]
+    
+    subgraph Feature Engineering
+        FG --> TE[Text Embedding]
+        FG --> NE[Numerical Encoding]
+        FG --> CE[Categorical Encoding]
+        TE & NE & CE --> DR[Dimensionality Reduction]
+    end
+    
+    DR --> GC[Graph Construction]
+    GC --> GNN[GNN Processing]
+    GNN --> VIS[Visualization]
+    
+    style Feature Engineering fill:#00968820,stroke:#009688
+```
+
+## 🛠️ Technologies Used
 
 ### Backend
-
-- **`DataFrameToGraph.py`**  
-  Converts pandas DataFrames into NetworkX graph objects based on a user-provided configuration for nodes and relationships.
-
-- **`FeatureSpaceCreator.py`**  
-  Processes text and numeric data, creates embeddings using various methods, applies preprocessing and dimensionality reduction, and attaches these features to graph nodes.
-
-- **`main.py`**  
-  Implements a FastAPI server with a `/process-data` endpoint that accepts CSV data and configuration, builds the graph, attaches features, and returns the final graph data (as JSON) and CSV representation of feature data.
-
-- **`TorchGeometricGraphBuilder.py`**  
-  Parses JSON graph data into a PyTorch Geometric Data object. This module also includes multiple GNN model implementations (GCN, GraphSAGE, GAT, GIN, ChebConv, ResidualGCN), training routines with early stopping, evaluation metrics, and visualization methods.
+- **Python** (v3.10.11)
+- **FastAPI**: Modern, high-performance web framework
+- **PyTorch & PyTorch Geometric**: Deep learning framework with GNN extensions
+- **NetworkX**: Graph creation and manipulation
+- **Pandas**: Data processing and manipulation
+- **Transformers**: BERT and other embedding models
+- **Scikit-learn**: Machine learning utilities
+- **UMAP**: Dimensionality reduction
 
 ### Frontend
+- **React**: UI library for building interactive interfaces
+- **React Flow**: Interactive node-based UI
+- **D3.js**: Data visualization library
+- **Material UI**: Component library for modern UI design
+- **PapaParse**: CSV parsing
+- **React Force Graph**: Graph visualization
+- **Axios**: HTTP client for API requests
 
-- **React Application:**  
-  Provides a rich, interactive user interface built with React. Key components include:
-  - **FileUploader:** For CSV file upload and parsing.
-  - **ConfigurationPanel:** To select node columns, define relationships, and configure advanced feature creation.
-  - **GraphNet & ReactFlowWrapper:** For visualizing and manipulating the graph layout.
-  - **GraphVisualizer & Sidebar:** To display graph statistics, node degree distribution, and offer download options.
-  - **Modals (NodeEditModal, RelationshipModal, InfoModal):** For editing node properties, defining relationships, and displaying additional information.
-  
-- **Supporting Files:**  
-  - `package.json`, CSS styles, and various hooks (e.g., `useGraph.js`) that manage state and API interactions with the backend.
-
----
-
-## Installation
+## 📥 Installation
 
 ### Prerequisites
-
-- **Python 3.8+** (with pip)
-- **Node.js** (v14+ recommended)
-- **Git Bash for Windows** (recommended for command-line operations)
+- Python 3.10.11
+- Node.js (v14+)
+- Git
 
 ### Backend Setup
 
-1. **Clone the Repository:**
-
+1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/Dynagh.git
-   cd Dynagh/backend
+   git clone https://github.com/MaLoskins/GNN-Application.git
+   cd GNN-Application
    ```
 
-2. **Create a Virtual Environment (optional but recommended):**
-
+2. Create and activate a virtual environment:
    ```bash
    python -m venv venv
-   source venv/Scripts/activate  # Use 'source venv/bin/activate' on Unix systems
+   # On Windows
+   venv\Scripts\activate
+   # On macOS/Linux
+   source venv/bin/activate
    ```
 
-3. **Install Dependencies:**
-
+3. Install backend dependencies:
    ```bash
+   cd backend
    pip install -r requirements.txt
    ```
 
-4. **Configure Environment Variables (if needed):**  
-   For example, set paths for caching GloVe models or specifying device preferences.
-
 ### Frontend Setup
 
-1. **Navigate to the Frontend Directory:**
-
+1. Navigate to the frontend directory:
    ```bash
    cd ../frontend
    ```
 
-2. **Install Node Dependencies:**
-
+2. Install frontend dependencies:
    ```bash
    npm install
    ```
 
-3. **Configure API URL (optional):**  
-   If you need to change the backend URL, set the `REACT_APP_API_BASE_URL` variable in a `.env` file.
+## 🚀 Usage
 
----
+### Running the Application
 
-## Usage
+1. Start the backend server:
+   ```bash
+   # From the backend directory
+   uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
 
-### Running the Backend
+2. In a separate terminal, start the frontend development server:
+   ```bash
+   # From the frontend directory
+   npm start
+   ```
 
-From the backend directory in Git Bash, run:
+3. Open your browser and navigate to `http://localhost:3000`
 
-```bash
-uvicorn main:app --host 0.0.0.0 --port 8000
+### Workflow
+
+1. **Upload Data**: Use the file uploader to import your CSV data
+2. **Configure Graph**: Select which columns should be treated as nodes and define relationships between them
+3. **Feature Configuration**: Enable advanced feature creation and select embedding methods (BERT, GloVe, Word2Vec)
+4. **Process Graph**: Send your configuration to the backend for processing
+5. **Visualize & Analyze**: Explore the resulting graph through the interactive visualization
+6. **Export Results**: Download the processed graph data for further analysis or use in GNN models
+
+## 📁 Project Structure
+
+```
+GNN-Application/
+├── backend/                  # Python backend
+│   ├── data/                 # Sample datasets
+│   ├── tests/                # Backend tests
+│   ├── DataFrameToGraph.py   # CSV to graph conversion
+│   ├── FeatureSpaceCreator.py # Feature embedding generation
+│   ├── TorchGeometricGraphBuilder.py # PyTorch Geometric integration
+│   ├── main.py               # FastAPI server
+│   └── requirements.txt      # Python dependencies
+│
+└── frontend/                 # React frontend
+    ├── src/
+    │   ├── components/       # React components
+    │   │   └── GraphNet-Tab/ # Graph visualization components
+    │   ├── hooks/            # Custom React hooks
+    │   ├── styles/           # CSS styles
+    │   ├── App.js            # Main application component
+    │   └── index.js          # Application entry point
+    └── package.json          # Node.js dependencies
 ```
 
-This starts the FastAPI server, exposing the `/process-data` endpoint for processing CSV data and building graphs.
+## 👨‍💻 About the Author
 
-### Running the Frontend
+**Matthew Haskins**  
+University of Western Australia
 
-From the frontend directory in Git Bash, run:
-
-```bash
-npm start
-```
-
-This will launch the React application in your default web browser, allowing you to interact with the tool.
-
-### Workflow Overview
-
-1. **CSV Upload:**  
-   Use the File Uploader in the frontend to drag and drop your CSV file. The file parser (via PapaParse) extracts data and headers.
-
-2. **Configuration:**  
-   In the Configuration Panel, select which CSV columns should be treated as nodes and optionally define relationships between them. Enable advanced feature creation if you wish to generate embeddings (using BERT, GloVe, or Word2Vec).
-
-3. **Graph Processing:**  
-   Upon clicking "Process Graph," the frontend sends your data and configuration to the backend. The backend:
-   - Converts the CSV data into a graph.
-   - Attaches precomputed or dynamically generated feature embeddings.
-   - Optionally processes the graph with Torch Geometric routines.
-
-4. **Visualization & Analysis:**  
-   The resulting graph data is returned and visualized through interactive components. You can inspect nodes, adjust relationships, and download the processed graph in JSON or CSV format.
-
-5. **GNN Training & Evaluation:**  
-   The backend includes modules to train various GNN architectures on the generated graph data, complete with validation, testing, and visualization of node embeddings.
+<a href="https://maloskins.pages.dev/cv" target="_blank" rel="noopener" title="Portfolio">Portfolio</a> |
+<a href="https://github.com/MaLoskins?tab=repositories" target="_blank" rel="noopener" title="GitHub">GitHub</a> |
+<a href="https://www.linkedin.com/in/matthew-haskins-2875a41ab/" target="_blank" rel="noopener" title="LinkedIn">LinkedIn</a>
 
 ---
 
-## Advanced Configuration
-
-- **Feature Embedding Configuration:**  
-  Define custom feature configurations in the frontend to specify parameters such as:
-  - **Embedding Method:** BERT, GloVe, or Word2Vec.
-  - **Embedding Dimensions:** e.g., 768 for BERT.
-  - **Preprocessing Options:** Stopwords removal, text cleaning, and tokenization settings.
-  - **Dimensionality Reduction:** Apply PCA or UMAP if needed.
-
-- **GNN Model Selection:**  
-  The backend supports multiple architectures. You can adjust training parameters (learning rate, dropout, epochs, etc.) via command-line arguments when launching the training script (see `TorchGeometricGraphBuilder.py`).
-
-- **Logging & Debugging:**  
-  Detailed logging is implemented across the backend. Check log files (e.g., `logs/feature_space_creator.log`) for insights into the processing pipeline.
-
----
-
-## Contributing
-
-Contributions are welcome! If you wish to extend the functionality of Dynagh or fix bugs:
-- Fork the repository.
-- Create a feature branch.
-- Commit and push your changes.
-- Submit a pull request with a detailed description of your changes.
-
-Please ensure that your contributions follow the existing code style and include appropriate tests and documentation.
-
----
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Contact
-
-For questions, suggestions, or further discussion, please contact:
-
-- **Author:** Matthew Haskins  
-- **Email:** matthew.haskins.mh@gmail.com  
-- **GitHub:** [MaLoskins](https://https://github.com/MaLoskins)
-
----
-
-Dynagh provides a full-stack solution for the dynamic creation and analysis of geometric data tailored for GNN applications. With its robust backend processing and intuitive frontend interface, this tool serves as a valuable resource for research and experimentation in geometric neural networks. Enjoy exploring and expanding its capabilities!
-
+This project is designed to facilitate research and development in the field of Graph Neural Networks. If you have any questions or suggestions, please feel free to reach out through any of the channels above.
