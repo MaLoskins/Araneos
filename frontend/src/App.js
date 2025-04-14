@@ -5,7 +5,6 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import GraphNet from './components/GraphNet-Tab/GraphNet';
 import useGraph from './hooks/useGraph';
-import './App.css';
 
 // Memoize components for better performance
 const MemoizedHeader = memo(Header);

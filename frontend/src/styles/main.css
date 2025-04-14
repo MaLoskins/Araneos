@@ -1,0 +1,708 @@
+/* main.css - Centralized CSS for all components */
+
+/* ===== Root Variables ===== */
+:root {
+  --background-color: #2E2E38;
+  --primary-color: #1f1f1f;
+  --secondary-color: #1e1e1e;
+  --accent-color: #bb86fc;
+  --text-color: #ffffff;
+  --secondary-text-color: #bbbbbb;
+  --border-color: #333333;
+  --button-background: #bb86fc;
+  --button-hover: #985eff;
+  --modal-background: #1f1f1f;
+  --dropzone-border: #444444;
+  --dropzone-background: #1f1f1f;
+  --dropzone-active-background: #2c2c2c;
+  --input-background: #2c2c2c;
+  --input-text-color: #ffffff;
+  --button-text-color: #ffffff;
+}
+
+/* ===== Global Styles ===== */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  height: 100%;
+  width: 100%;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+h1, h2, h3 {
+  color: var(--accent-color);
+  text-align: center;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.accent-text-center {
+  text-align: center;
+  color: var(--accent-color);
+}
+
+/* ===== Header Styles ===== */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 90px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  padding: 0 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.app-header:hover {
+  background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+}
+
+.logo-container {
+  position: absolute;
+  left: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.app-logo {
+  height: 50px;
+  margin-right: 15px;
+}
+
+.app-name {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.nav-link {
+  margin-left: 15px;
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 1.1em;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  background: var(--accent-color);
+  left: 0;
+  bottom: -5px;
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+  color: var(--accent-color);
+}
+
+.nav-link:hover::after,
+.active-link::after {
+  width: 100%;
+}
+
+.active-link {
+  color: var(--accent-color);
+}
+
+/* ===== Main Layout Styles ===== */
+.main-layout {
+  display: flex;
+  flex: 1;
+}
+
+/* ===== Sidebar Styles ===== */
+.sidebar {
+  width: 400px;
+  background: var(--primary-color);
+  border-right: 1px solid var(--border-color);
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: 600;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.sidebar-download-options {
+  display: flex;
+  gap: 10px;
+}
+
+.sidebar-download-description {
+  margin-top: 10px;
+  font-size: 0.9em;
+}
+
+.chart-container {
+  width: 100%;
+  height: 250px;
+}
+
+/* ===== Content Styles ===== */
+.content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* ===== InfoButton Styles ===== */
+.info-button-container {
+  margin-left: 8px;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.info-icon {
+  vertical-align: middle;
+}
+
+/* ===== InfoModal Styles ===== */
+.info-modal-content {
+  max-width: 500px;
+  background: var(--modal-background);
+  color: var(--text-color);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 0 auto;
+  outline: none;
+}
+
+/* Feature grid styling */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.feature-summary-container {
+  margin-bottom: 8px;
+}
+
+/* Node selection styling */
+.node-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.node-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 15px;
+}
+
+.node-selector input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.node-selector label {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.info-modal-title {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+  color: var(--accent-color);
+}
+
+.info-modal-description p,
+.info-modal-description ul {
+  margin: 0.5em 0;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.info-modal-description ul {
+  list-style: disc;
+  margin-left: 1.5em;
+}
+
+/* ===== FileUploader Styles ===== */
+.file-uploader {
+  width: 80%;
+  margin: 20px auto;
+}
+
+.file-uploader-title {
+  text-align: center;
+  margin-bottom: 15px;
+  color: var(--accent-color);
+}
+
+.dropzone {
+  border: 2px dashed var(--dropzone-border);
+  background: var(--dropzone-background);
+  padding: 40px;
+  text-align: center;
+  border-radius: 8px;
+  transition: background 0.3s, border-color 0.3s;
+  color: var(--secondary-text-color);
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.dropzone.active {
+  background: var(--dropzone-active-background);
+  border-color: var(--accent-color);
+}
+
+.dropzone p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* ===== ReactFlowWrapper Styles ===== */
+.flow-wrapper {
+  margin: 20px 0;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px;
+  background-color: var(--primary-color);
+}
+
+.react-flow-container {
+  width: 100%;
+  height: 400px;
+}
+
+/* ===== GraphVisualizer Styles ===== */
+.graph-section {
+  width: 80%;
+  margin-top: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--primary-color);
+  padding: 20px;
+  box-sizing: border-box;
+  margin: 20px auto;
+}
+
+.graph-section h2 {
+  margin-top: 0;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.graph-container {
+  width: 100%;
+  height: 600px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--background-color);
+  border-radius: 5px;
+}
+
+.node-tooltip {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--modal-background);
+  color: var(--text-color);
+  padding: 12px;
+  border-radius: 6px;
+  max-width: 300px;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border: 1px solid var(--border-color);
+}
+
+/* ===== Modal Styles ===== */
+.node-edit-modal,
+.relationship-modal {
+  background: var(--modal-background);
+  color: var(--text-color);
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+  outline: none;
+  position: relative;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  background: var(--input-background);
+  color: var(--input-text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-buttons button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  background: var(--button-background);
+  color: var(--button-text-color);
+}
+
+.modal-buttons button:hover {
+  background: var(--button-hover);
+}
+
+/* ===== Button Styles ===== */
+.reopen-flow-btn {
+  width: 15%;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background-color: var(--accent-color);
+  color: var(--button-text-color);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== GraphNet Styles ===== */
+.react-flow-title {
+  margin-top: 20px;
+}
+
+/* ===== Material UI Overrides ===== */
+.sidebar .MuiAccordion-root {
+  background-color: var(--primary-color) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+  margin-bottom: 10px;
+}
+
+.sidebar .MuiAccordionSummary-root,
+.sidebar .MuiAccordionSummary-content,
+.sidebar .MuiAccordionSummary-expandIconWrapper svg {
+  color: var(--text-color) !important;
+}
+
+.sidebar .MuiAccordionDetails-root {
+  background-color: var(--secondary-color) !important;
+  color: var(--text-color) !important;
+}
+/* ===== Configuration Panel Styles ===== */
+/* ConfigurationPanel.css */
+.config-section {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Reset all Material-UI accordion styles */
+.config-section .MuiAccordion-root {
+  box-shadow: none !important;
+  border-radius: 4px !important;
+  margin-bottom: 12px !important;
+}
+
+/* Force the summary to be a single row with items aligned */
+.config-section .MuiAccordionSummary-root {
+  min-height: 48px !important;
+  padding: 0 16px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+/* Make content take up most of the space and align items */
+.config-section .MuiAccordionSummary-content {
+  margin: 12px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-grow: 1 !important;
+  max-width: calc(100% - 40px) !important; /* Leave space for arrow */
+}
+
+.config-section .MuiAccordionDetails-root {
+  padding: 16px !important;
+}
+
+/* Fix the arrow position and color */
+.config-section .MuiAccordionSummary-expandIconWrapper {
+  position: static !important; /* Not relative or absolute */
+  margin-left: 8px !important;
+  color: var(--text-color, #333) !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Fix arrow icon */
+.config-section .MuiAccordionSummary-expandIconWrapper svg {
+  color: var(--text-color, #333) !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* Simple rotation for expanded state */
+.config-section .MuiAccordionSummary-expandIconWrapper.Mui-expanded {
+  transform: rotate(180deg) !important;
+}
+
+/* Fix for accordion header layout */
+.accordion-header-content {
+  display: flex !important;
+  align-items: center !important;
+  flex-grow: 1 !important;
+  overflow: hidden !important; /* Prevent overflow */
+  white-space: nowrap !important; /* Keep on one line */
+}
+
+/* Feature summary styling */
+.feature-summary {
+  background: var(--input-background, #f5f5f5);
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.feature-summary:hover {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.feature-details {
+  margin-top: 8px;
+}
+
+.feature-details p {
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+/* Feature edit form styling */
+.feature-edit-form {
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Feature config item styling */
+.feature-config-item {
+  background: var(--primary-color, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  padding: 14px;
+  box-sizing: border-box;
+  position: relative;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.feature-config-item:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Button styling */
+.remove-feature-btn {
+  background: #ff4d4d;
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.remove-feature-btn:hover {
+  background: #ff3333;
+}
+
+.edit-feature-btn,
+.toggle-feature-btn {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--button-background, #4a90e2);
+  color: var(--button-text-color, #fff);
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.edit-feature-btn:hover,
+.toggle-feature-btn:hover {
+  background: var(--button-hover-background, #3a80d2);
+}
+
+.add-feature-btn {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--button-background, #4a90e2);
+  color: var(--button-text-color, #fff);
+  border: none;
+  transition: all 0.2s ease;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.add-feature-btn:hover {
+  background: var(--button-hover-background, #3a80d2);
+  transform: translateY(-1px);
+}
+
+/* Process Graph Section */
+.process-graph-section {
+  background-color: var(--primary-color, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  margin-bottom: 15px;
+  overflow: hidden;
+}
+
+.process-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--primary-color, #fff);
+  color: var(--text-color, #333);
+  font-weight: 500;
+}
+
+.process-header strong {
+  margin-right: 8px;
+}
+
+.process-header .info-button {
+  margin-left: 8px;
+}
+
+.process-content {
+  padding: 20px;
+  background-color: var(--secondary-color, #f8f8f8);
+  text-align: center;
+}
+
+/* Process button styling */
+.process-button {
+  background: var(--accent-color, #4a90e2);
+  color: var(--button-text-color);
+  border: none;
+  padding: 14px 24px;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  margin-top: 15px;
+  min-width: 200px;
+}
+
+.process-button:hover:not(:disabled) {
+  background: var(--button-hover, #985eff);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.process-button:disabled {
+  background: #555555;
+  color: #999999;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Improve form elements for consistency */
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-color);
+}
+
+select, input[type="text"], input[type="number"] {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-background);
+  color: var(--input-text-color);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+select:focus, input[type="text"]:focus, input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(187, 134, 252, 0.25);
+}

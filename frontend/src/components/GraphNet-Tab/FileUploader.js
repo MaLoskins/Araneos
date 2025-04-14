@@ -26,13 +26,15 @@ const FileUploader = ({ onFileDrop }) => {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: '.csv',
+    accept: {
+      'text/csv': ['.csv']
+    },
     multiple: false,
   });
 
   return (
     <div className="file-uploader">
-      <h3 style={{ textAlign: 'center' }}>
+      <h3 className="file-uploader-title">
         Upload Your CSV
         <InfoButton
           title={sectionsInfo.fileUploader.title}
@@ -42,7 +44,6 @@ const FileUploader = ({ onFileDrop }) => {
       <div
         {...getRootProps()}
         className={`dropzone ${isDragActive ? 'active' : ''}`}
-        style={{ marginTop: '10px' }}
       >
         <input {...getInputProps()} />
         {isDragActive ? (

@@ -15,8 +15,8 @@ const InfoButton = ({ title, description }) => {
   const handleClose = () => setModalOpen(false);
 
   return (
-    <span style={{ marginLeft: '8px', cursor: 'pointer', display: 'inline-block' }}>
-      <FiInfo onClick={handleOpen} style={{ verticalAlign: 'middle' }} />
+    <span className="info-button-container">
+      <FiInfo onClick={handleOpen} className="info-icon" />
       <InfoModal 
         isOpen={modalOpen} 
         onRequestClose={handleClose} 

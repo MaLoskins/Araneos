@@ -137,7 +137,7 @@ function Sidebar({ graphData, csvData }) {
           <strong>Download Graph</strong>
         </AccordionSummary>
         <AccordionDetails>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div className="sidebar-download-options">
             <Button
               variant="contained"
               color="primary"
@@ -155,7 +155,7 @@ function Sidebar({ graphData, csvData }) {
               CSV
             </Button>
           </div>
-          <p style={{ marginTop: '10px', fontSize: '0.9em' }}>
+          <p className="sidebar-download-description">
             Downloads the current graph data (nodes, links, features) in the selected format.
           </p>
         </AccordionDetails>
@@ -169,7 +169,7 @@ function Sidebar({ graphData, csvData }) {
         </AccordionSummary>
         <AccordionDetails>
           {degreeData.labels.length > 0 ? (
-            <div style={{ width: '100%', height: '250px' }}>
+            <div className="chart-container">
               <Bar
                 data={{
                   labels: degreeData.labels,

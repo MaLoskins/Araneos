@@ -6,7 +6,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { FiList, FiSettings, FiPlay } from 'react-icons/fi';
 import InfoButton from '../InfoButton';
 import sectionsInfo from '../../sectionsInfo';
-import './ConfigurationPanel.css';
 
 /**
  * Minimal criteria to treat a feature as "complete":
@@ -481,11 +480,7 @@ const ConfigurationPanel = ({
             }}
           >
             <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '16px',
-              }}
+              className="feature-grid"
             >
               {featureConfigs.map((feature, index) => {
                 const complete = isFeatureComplete(feature);
@@ -518,7 +513,7 @@ const ConfigurationPanel = ({
                     {(!complete || expanded) && (
                       <>
                         {complete && (
-                          <div style={{ marginBottom: '8px' }}>
+                          <div className="feature-summary-container">
                             {renderFeatureSummary(feature, index)}
                           </div>
                         )}

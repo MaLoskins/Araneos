@@ -10,7 +10,7 @@ const ReactFlowWrapper = ({
   onNodeClick,
 }) => {
   return (
-    <div className="flow-wrapper">
+    <div className="flow-wrapper" style={{ width: '100%', height: '400px' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -19,7 +19,7 @@ const ReactFlowWrapper = ({
         onConnect={onConnect}
         onNodeClick={onNodeClick}
         fitView
-        style={{ width: '100%', height: '400px' }}
+        style={{ width: '100%', height: '100%' }}
       >
         <Background color="#aaa" gap={16} />
         <Controls />

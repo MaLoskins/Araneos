@@ -100,7 +100,7 @@ function GraphNet(props) {
 
       {columns.length > 0 && showReactFlow && (
         <>
-          <h3 className="accent-text-center" style={{ marginTop: '20px' }}>
+          <h3 className="accent-text-center react-flow-title">
             React Flow Configuration
             <MemoizedInfoButton
               title={sectionsInfo.graphFlow.title}

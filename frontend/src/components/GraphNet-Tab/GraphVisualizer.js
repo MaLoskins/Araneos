@@ -88,19 +88,7 @@ const GraphVisualizer = ({ graphData, onNodeClick }) => {
           />
         )}
         {hoverNode && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '10px',
-              left: '10px',
-              background: 'rgba(0,0,0,0.7)',
-              color: '#fff',
-              padding: '10px',
-              borderRadius: '5px',
-              maxWidth: '300px',
-              pointerEvents: 'none'
-            }}
-          >
+          <div className="node-tooltip">
             <strong>ID:</strong> {hoverNode.id}<br />
             <strong>Type:</strong> {hoverNode.type}<br />
             {hoverNode.features && Object.keys(hoverNode.features).map((key) => (
