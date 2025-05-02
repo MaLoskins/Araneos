@@ -5,7 +5,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import './theme.css'; // Import centralized theme first
 import './styles/main.css';
 import App from './App';
 

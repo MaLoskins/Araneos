@@ -1,17 +1,23 @@
+/* TrainingTab.css - Specific styles for training tab component */
+
 .training-tab {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: var(--space-base);
+  padding: var(--space-20);
+  background-color: var(--background-color);
+  overflow: hidden;
 }
 
 .training-container {
   display: flex;
   flex-direction: row;
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 180px); /* Adjusting height accounting for header and padding */
   gap: var(--space-xl);
+  background-color: var(--background-color);
+  overflow: hidden;
 }
 
 /* Configuration Panel */
@@ -19,16 +25,18 @@
   flex: 0 0 350px;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-gray-100);
+  background-color: var(--card-background);
   border-radius: var(--border-radius-xl);
   padding: var(--space-lg);
   box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  max-height: 100%;
 }
 
 .training-config-panel h2 {
   margin-top: 0;
   margin-bottom: var(--space-lg);
-  color: var(--color-gray-900);
+  color: var(--accent-color);
   font-size: var(--font-size-3xl);
 }
 
@@ -39,34 +47,38 @@
 .form-section h3 {
   font-size: var(--font-size-lg);
   margin-bottom: var(--space-base);
-  color: var(--color-gray-700);
+  color: var(--text-secondary);
+  text-align: left;
 }
 
-.form-group {
+.training-config-panel .form-group {
   margin-bottom: var(--space-base);
 }
 
-.form-group label {
+.training-config-panel .form-group label {
   display: flex;
   flex-direction: column;
   font-weight: var(--font-weight-medium);
-  color: var(--color-gray-600);
+  color: var(--text-secondary);
   margin-bottom: var(--space-xs);
 }
 
-.form-group input,
-.form-group select {
+.training-config-panel .form-group input,
+.training-config-panel .form-group select {
   padding: var(--space-sm);
-  border: var(--border-width-thin) solid var(--color-gray-400);
+  border: var(--border-width-thin) solid var(--border-color);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-md);
   margin-top: var(--space-xs);
+  background-color: var(--input-background);
+  color: var(--input-text-color);
 }
 
-.form-group input:disabled,
-.form-group select:disabled {
-  background-color: var(--color-gray-200);
+.training-config-panel .form-group input:disabled,
+.training-config-panel .form-group select:disabled {
+  background-color: var(--secondary-background);
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 /* Training Controls */
@@ -92,12 +104,13 @@
   color: var(--color-light);
 }
 
-.start-button:hover {
+.start-button:hover:not(:disabled) {
   background-color: var(--color-success-hover);
 }
 
 .start-button:disabled {
   background-color: var(--color-success-light);
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -106,12 +119,13 @@
   color: var(--color-light);
 }
 
-.stop-button:hover {
+.stop-button:hover:not(:disabled) {
   background-color: var(--color-danger-hover);
 }
 
 .stop-button:disabled {
   background-color: var(--color-danger-light);
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -127,23 +141,25 @@
 
 /* Graph Summary Section */
 .graph-summary {
-  background-color: var(--color-gray-100);
+  background-color: var(--secondary-background);
   border-radius: var(--border-radius-xl);
   padding: var(--space-base);
   margin-bottom: var(--space-lg);
-  border: var(--border-width-thin) solid var(--color-gray-300);
+  border: var(--border-width-thin) solid var(--border-color);
 }
 
 .graph-summary.no-graph {
-  background-color: var(--color-warning-light);
-  border: var(--border-width-thin) solid var(--color-warning-border);
+  background-color: var(--card-background);
+  border: var(--border-width-thin) solid var(--color-warning);
+  color: var(--color-warning);
 }
 
 .graph-summary h3 {
   margin-top: 0;
   margin-bottom: var(--space-base);
   font-size: var(--font-size-lg);
-  color: var(--color-gray-700);
+  color: var(--text-color);
+  text-align: left;
 }
 
 .summary-stats {
@@ -161,7 +177,7 @@
 .stat-label {
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-sm);
-  color: var(--color-gray-600);
+  color: var(--text-secondary);
 }
 
 .stat-value {
@@ -171,14 +187,15 @@
 
 .labels-section {
   margin-top: var(--space-15);
-  border-top: var(--border-width-thin) solid var(--color-gray-300);
+  border-top: var(--border-width-thin) solid var(--border-color);
   padding-top: var(--space-10);
 }
 
 .labels-section h4 {
   margin-bottom: var(--space-8);
   font-size: var(--font-size-base);
-  color: var(--color-gray-700);
+  color: var(--text-secondary);
+  text-align: left;
 }
 
 .labels-list {
@@ -188,27 +205,30 @@
 }
 
 .label-item {
-  background-color: var(--color-info-light);
+  background-color: var(--secondary-background);
   border-radius: var(--border-radius-sm);
   padding: var(--space-4) var(--space-8);
   font-size: var(--font-size-sm);
-  border: var(--border-width-thin) solid var(--color-info-border);
+  border: var(--border-width-thin) solid var(--border-color);
+  color: var(--text-color);
 }
 
 /* Workflow Guidance */
 .workflow-guidance {
-  background-color: var(--color-light);
+  background-color: var(--secondary-background);
+  color: var(--text-color);
   border-radius: var(--border-radius-xl);
   padding: var(--space-base);
   margin-bottom: var(--space-lg);
-  border: var(--border-width-thin) solid var(--color-gray-300);
+  border: var(--border-width-thin) solid var(--border-color);
 }
 
 .workflow-guidance h3 {
   margin-top: 0;
   margin-bottom: var(--space-base);
   font-size: var(--font-size-lg);
-  color: var(--color-gray-700);
+  color: var(--text-color);
+  text-align: left;
 }
 
 .workflow-steps {
@@ -240,7 +260,7 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  background-color: var(--color-gray-300);
+  background-color: var(--border-color);
   border-radius: var(--border-radius-full);
   margin-right: var(--space-10);
   font-weight: var(--font-weight-semibold);
@@ -254,7 +274,7 @@
 
 .workflow-steps li.current .step-number {
   background-color: var(--chart-blue);
-  color: var(--color-info-dark);
+  color: var(--color-light);
 }
 
 .workflow-message {
@@ -267,6 +287,7 @@
 .workflow-message.warning {
   background-color: var(--color-warning-light);
   border-left: var(--border-width-emphasis) solid var(--color-warning);
+  color: var(--color-gray-800);
 }
 
 /* Link button styles */
@@ -284,6 +305,7 @@
 
 .link-button:hover {
   background-color: var(--color-info-hover);
+  text-decoration: none;
 }
 
 /* Validation warning */
@@ -293,6 +315,7 @@
   background-color: var(--color-danger-lighter);
   border-radius: var(--border-radius-sm);
   border-left: var(--border-width-emphasis) solid var(--color-danger);
+  color: var(--color-danger-dark);
 }
 
 /* Output Panel */
@@ -300,16 +323,19 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-gray-100);
+  background-color: var(--card-background);
   border-radius: var(--border-radius-xl);
   padding: var(--space-lg);
   box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  max-height: 100%;
 }
 
 .training-output-panel h3 {
   margin-top: 0;
   margin-bottom: var(--space-base);
-  color: var(--color-gray-700);
+  color: var(--text-color);
+  text-align: left;
 }
 
 .logs-container {
@@ -322,10 +348,12 @@
   font-family: var(--font-mono);
   font-size: var(--font-size-md);
   margin-bottom: var(--space-xl);
+  min-height: 150px;
+  max-height: 30vh;
 }
 
 .empty-logs {
-  color: var(--color-gray-500);
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -335,26 +363,28 @@
 }
 
 .log-time {
-  color: var(--color-gray-600);
+  color: var(--text-secondary);
   margin-right: var(--space-sm);
 }
 
 .log-message {
-  color: var(--color-gray-500);
+  color: var(--text-secondary);
 }
 
 /* Metrics Display */
 .metrics-container {
-  background-color: var(--color-light);
+  background-color: var(--secondary-background);
   border-radius: var(--border-radius-lg);
   padding: var(--space-base);
   box-shadow: var(--shadow-inset);
+  margin-bottom: var(--space-lg);
+  overflow-y: auto;
 }
 
 .metrics-container h3 {
   margin-top: 0;
   margin-bottom: var(--space-base);
-  color: var(--color-gray-700);
+  color: var(--text-color);
 }
 
 .metrics-grid {
@@ -371,7 +401,7 @@
 .metric-label {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-gray-600);
+  color: var(--text-secondary);
   margin-bottom: var(--space-xs);
 }
 
@@ -382,52 +412,40 @@
 }
 
 .metric-report {
-  background-color: var(--color-gray-100);
+  background-color: var(--card-background);
   padding: var(--space-md);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
   white-space: pre-wrap;
   overflow-x: auto;
   margin: 0;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .training-container {
-    flex-direction: column;
-  }
-  
-  .training-config-panel {
-    flex: 0 0 auto;
-    width: 100%;
-  }
-  
-  .training-output-panel {
-    margin-top: var(--space-xl);
-  }
+  font-family: var(--font-mono);
 }
 
 /* Metrics Visualizer Styles */
 .metrics-visualizer {
-  background-color: var(--color-light);
+  background-color: var(--secondary-background);
   border-radius: var(--border-radius-lg);
   padding: var(--space-lg);
   margin-top: var(--space-xl);
   box-shadow: var(--shadow-inset);
+  overflow-y: auto;
+  max-height: 60vh;
 }
 
 .metrics-visualizer h3 {
   margin-top: 0;
   margin-bottom: var(--space-lg);
-  color: var(--color-gray-700);
+  color: var(--text-color);
   font-size: var(--font-size-2xl);
 }
 
 .metrics-visualizer h4 {
   margin-top: 0;
   margin-bottom: var(--space-md);
-  color: var(--color-gray-600);
+  color: var(--text-secondary);
   font-size: var(--font-size-lg);
+  text-align: left;
 }
 
 .metrics-charts-container {
@@ -438,7 +456,7 @@
 }
 
 .chart-container {
-  background-color: var(--color-gray-100);
+  background-color: var(--card-background);
   border-radius: var(--border-radius-lg);
   padding: var(--space-base);
   box-shadow: var(--shadow-xs);
@@ -455,7 +473,7 @@
 }
 
 .performance-metrics {
-  background-color: var(--color-gray-100);
+  background-color: var(--card-background);
   border-radius: var(--border-radius-lg);
   padding: var(--space-base);
   margin-bottom: var(--space-xl);
@@ -467,14 +485,41 @@
 }
 
 .classification-report {
-  background-color: var(--color-gray-100);
+  background-color: var(--card-background);
   border-radius: var(--border-radius-lg);
   padding: var(--space-base);
   margin-bottom: var(--space-xl);
   box-shadow: var(--shadow-xs);
 }
 
-/* Responsive adjustments for metrics visualizer */
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .training-container {
+    height: auto;
+    flex-direction: column;
+  }
+  
+  .training-config-panel {
+    flex: 0 0 auto;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .training-output-panel {
+    margin-top: var(--space-xl);
+    max-height: none;
+  }
+  
+  .logs-container {
+    max-height: 300px;
+  }
+  
+  .metrics-visualizer {
+    max-height: none;
+  }
+}
+
 @media (max-width: 768px) {
   .metrics-charts-container {
     grid-template-columns: 1fr;
@@ -489,7 +534,6 @@
   }
 }
 
-/* Ensure the metrics stand out from the logs on smaller screens */
 @media (max-width: 576px) {
   .metrics-visualizer {
     margin-top: var(--space-base);
@@ -506,5 +550,9 @@
   
   .chart-wrapper {
     height: var(--chart-height-sm);
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
   }
 }

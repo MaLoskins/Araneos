@@ -10,7 +10,7 @@ const ReactFlowWrapper = ({
   onNodeClick,
 }) => {
   return (
-    <div className="flow-wrapper" style={{ width: '100%', height: '400px' }}>
+    <div className="flow-wrapper" style={{ width: '80%', height: '400px', margin: '0 auto' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
