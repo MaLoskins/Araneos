@@ -1,0 +1,8 @@
+/* 
+ * Sidebar.css - Styles for the Sidebar component
+ * Uses variables from theme.css
+ */
+
+.sidebar-icon {
+  margin-right: var(--icon-margin);
+}

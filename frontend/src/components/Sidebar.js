@@ -1,5 +1,7 @@
 // src/components/Sidebar.js
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import './Sidebar.css'; // Import Sidebar-specific styles
 import {
   Accordion,
   AccordionSummary,
@@ -7,7 +9,7 @@ import {
   Button
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { FiDownload, FiBarChart2, FiDatabase } from 'react-icons/fi';
+import { FiDownload, FiBarChart2, FiDatabase, FiActivity, FiCpu } from 'react-icons/fi';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Title, Tooltip as ChartTooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
@@ -116,10 +118,22 @@ function Sidebar({ graphData, csvData }) {
         />
       </h2>
 
+      {/* Navigation Links */}
+      <div className="sidebar-nav">
+        <Link to="/" className="sidebar-nav-link">
+          <FiActivity className="sidebar-icon" />
+          <span>GraphNet</span>
+        </Link>
+        <Link to="/train" className="sidebar-nav-link">
+          <FiCpu className="sidebar-icon" />
+          <span>Model Training</span>
+        </Link>
+      </div>
+
       {/* 1) Basic Graph Info */}
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <FiDatabase style={{ marginRight: 8 }} />
+          <FiDatabase className="sidebar-icon" />
           <strong>Graph & CSV Summary</strong>
         </AccordionSummary>
         <AccordionDetails>
@@ -133,7 +147,7 @@ function Sidebar({ graphData, csvData }) {
       {/* 2) Download Options */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <FiDownload style={{ marginRight: 8 }} />
+          <FiDownload className="sidebar-icon" />
           <strong>Download Graph</strong>
         </AccordionSummary>
         <AccordionDetails>
@@ -164,7 +178,7 @@ function Sidebar({ graphData, csvData }) {
       {/* 3) Charts & Visualization */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <FiBarChart2 style={{ marginRight: 8 }} />
+          <FiBarChart2 className="sidebar-icon" />
           <strong>Node Degree Distribution</strong>
         </AccordionSummary>
         <AccordionDetails>

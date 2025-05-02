@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import GraphNet from './components/GraphNet-Tab/GraphNet';
+import TrainingTab from './components/Training-Tab/TrainingTab';
 import useGraph from './hooks/useGraph';
 
 // Memoize components for better performance
@@ -40,6 +41,9 @@ function App() {
     featureConfigs,
     setFeatureConfigs,
   } = useGraph();
+
+  // Get the graph statistics and validation functions
+  const { getGraphStats, isGraphValidForTraining } = useGraph();
 
   // Optimize rendering by using React.useMemo for expensive calculations
   const sidebarProps = React.useMemo(() => ({
@@ -86,6 +90,18 @@ function App() {
                   toggleFeatureSpace={toggleFeatureSpace}
                   featureConfigs={featureConfigs}
                   setFeatureConfigs={setFeatureConfigs}
+                />
+              }
+            />
+            <Route
+              path="/train"
+              element={
+                <TrainingTab
+                  // Pass all necessary graph-related props to ensure data persistence
+                  graphData={graphData}
+                  loading={loading}
+                  getGraphStats={getGraphStats}
+                  isGraphValidForTraining={isGraphValidForTraining}
                 />
               }
             />
