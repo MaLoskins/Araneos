@@ -166,9 +166,8 @@ const useGraph = () => {
   // --- Graph Processing and Submission ---
 
   const handleSubmit = useCallback(async (labelColumn) => {
-    if (!csvData.length || !config.nodes.length) {
-      setGraphError('Please upload CSV and select at least one node.');
-      return false;
+    if (labelColumn) {
+      localStorage.setItem('selectedLabelColumn', labelColumn);
     }
 
     setLoading(true);

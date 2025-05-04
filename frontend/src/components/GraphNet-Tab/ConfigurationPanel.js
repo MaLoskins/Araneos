@@ -37,7 +37,15 @@ const ConfigurationPanel = ({
   );
 
   // Local state for chosen label column
-  const [labelColumn, setLabelColumn] = useState('');
+  const [labelColumn, setLabelColumn] = useState(() => {
+    // Try to load from local storage
+    const savedLabel = localStorage.getItem('selectedLabelColumn');
+    return savedLabel || '';
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('selectedLabelColumn', labelColumn);
+  }, [labelColumn]);
 
   React.useEffect(() => {
     if (expandedIndices.length < featureConfigs.length) {

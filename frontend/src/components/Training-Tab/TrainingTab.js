@@ -128,29 +128,29 @@ const TrainingTab = (props) => {
     const edgeCount = edgesData.length;
     
     // Check for node labels
-    const hasLabels = graphContext.nodes.some(
-      (node) =>
-        node.label !== undefined &&
-        node.label !== null &&
-        node.label !== ""
-    );
-    
-    // Get unique labels
-    let uniqueLabels = [];
-    if (hasLabels) {
-      uniqueLabels = [
-        ...new Set(
-          graphContext.nodes
-            .filter(
-              (node) =>
-                node.label !== undefined &&
-                node.label !== null &&
-                node.label !== ""
-            )
-            .map((node) => node.label)
-        ),
-      ];
-    }
+// Enhanced label detection in the graphStats memo
+const hasLabels = graphContext.nodes.some(
+  (node) =>
+    (node.label !== undefined && node.label !== null && node.label !== "") ||
+    (node.features && node.features.label !== undefined && node.features.label !== null && node.features.label !== "")
+);
+
+// Get unique labels from all possible locations
+let uniqueLabels = [];
+if (hasLabels) {
+  const allLabels = graphContext.nodes
+    .filter(node => {
+      // Check both direct label property and features.label
+      return (node.label !== undefined && node.label !== null && node.label !== "") ||
+             (node.features && node.features.label !== undefined && node.features.label !== null && node.features.label !== "");
+    })
+    .map(node => {
+      // Return either direct label or features.label
+      return node.label || (node.features && node.features.label);
+    });
+  
+  uniqueLabels = [...new Set(allLabels)];
+}
     
     return {
       nodes: nodeCount,
