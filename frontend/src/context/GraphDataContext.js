@@ -24,6 +24,7 @@ const REACTFLOW_CONFIG_KEY = 'reactFlowConfig';
 const initialGraphState = {
   nodes: [],
   edges: [],
+  links: [], // Always keep both edges and links for compatibility
   // Add other serializable graph properties as needed
   lastSync: null, // for synchronization markers
   trainingLogs: [],
@@ -40,9 +41,19 @@ const initialGraphState = {
 function graphReducer(state, action) {
   switch (action.type) {
     case 'SET_GRAPH':
+      // ENHANCED: Always make sure both edges and links are set
+      const payload = { ...action.payload };
+      
+      // Make sure we have both edges and links (for compatibility)
+      if (Array.isArray(payload.edges) && !Array.isArray(payload.links)) {
+        payload.links = [...payload.edges];
+      } else if (Array.isArray(payload.links) && !Array.isArray(payload.edges)) {
+        payload.edges = [...payload.links];
+      }
+      
       return { 
         ...state, 
-        ...action.payload, 
+        ...payload, 
         lastSync: Date.now(), 
         lastUpdated: Date.now(),
         // Clear configOnly flag when setting real graph data
@@ -58,7 +69,14 @@ function graphReducer(state, action) {
     case 'UPDATE_NODES':
       return { ...state, nodes: action.payload, lastSync: Date.now(), lastUpdated: Date.now() };
     case 'UPDATE_EDGES':
-      return { ...state, edges: action.payload, lastSync: Date.now(), lastUpdated: Date.now() };
+      // ENHANCED: Update both edges and links
+      return { 
+        ...state, 
+        edges: action.payload, 
+        links: action.payload, // Keep links in sync with edges
+        lastSync: Date.now(), 
+        lastUpdated: Date.now() 
+      };
     case 'RESET_GRAPH':
       return { ...initialGraphState, lastSync: Date.now(), lastUpdated: Date.now() };
     case 'APPEND_TRAINING_LOG':
@@ -70,6 +88,18 @@ function graphReducer(state, action) {
     default:
       throw new Error(`Unhandled action type: ${action.type}`);
   }
+}
+
+// --- Debug Function to log graph state ---
+function debugGraphState(state) {
+  return {
+    nodeCount: state?.nodes?.length || 0,
+    edgeCount: state?.edges?.length || 0,
+    linkCount: state?.links?.length || 0,
+    hasReactFlowConfig: !!state?.reactFlowConfig,
+    configOnly: !!state?.configOnly,
+    keys: Object.keys(state || {})
+  };
 }
 
 // --- Contexts ---
@@ -90,17 +120,34 @@ export function GraphDataProvider({ children }) {
       
       if (stored) {
         const parsed = JSON.parse(stored, graphReviver);
-        // Accept both 'edges' and 'links' as edge data
+        
+        // ENHANCED: Handle both edges and links correctly
         let edges = [];
+        let links = [];
+        
         if (parsed) {
           if (Array.isArray(parsed.edges)) {
             edges = parsed.edges;
-          } else if (Array.isArray(parsed.links)) {
-            edges = parsed.links;
+          }
+          if (Array.isArray(parsed.links)) {
+            links = parsed.links;
+          }
+          
+          // Use whichever is non-empty, prefer edges
+          if (edges.length > 0) {
+            links = edges;
+          } else if (links.length > 0) {
+            edges = links;
           }
         }
-        if (parsed && Array.isArray(parsed.nodes) && (Array.isArray(edges) || Array.isArray(parsed.edges))) {
-          state = { ...state, ...parsed, edges };
+        
+        if (parsed && Array.isArray(parsed.nodes)) {
+          state = { 
+            ...state, 
+            ...parsed, 
+            edges, 
+            links, // Keep both for compatibility
+          };
         }
       }
       
@@ -113,6 +160,9 @@ export function GraphDataProvider({ children }) {
           console.error('Failed to parse ReactFlow config:', e);
         }
       }
+      
+      // Debug log of initialized state
+      console.log('GraphDataContext initialized with:', debugGraphState(state));
       
       return state;
     } catch (e) {
@@ -140,12 +190,24 @@ export function GraphDataProvider({ children }) {
       resolver = resolve;
     });
     try {
-      // Always persist as { nodes, edges } for consistency, but also add 'links' for compatibility
+      // ENHANCED: Always include both edges and links
+      // Make sure both are present and contain the same data
+      let edges = Array.isArray(state.edges) ? state.edges : [];
+      let links = Array.isArray(state.links) ? state.links : [];
+      
+      // If either is empty but the other isn't, sync them
+      if (edges.length === 0 && links.length > 0) {
+        edges = links;
+      } else if (links.length === 0 && edges.length > 0) {
+        links = edges;
+      }
+      
       const persistObj = {
         ...state,
-        edges: Array.isArray(state.edges) ? state.edges : [],
-        links: Array.isArray(state.edges) ? state.edges : [],
+        edges,
+        links,
       };
+      
       const serialized = JSON.stringify(persistObj, graphReplacer);
       localStorage.setItem(LOCAL_STORAGE_KEY, serialized);
       
@@ -154,6 +216,9 @@ export function GraphDataProvider({ children }) {
         const configSerialized = JSON.stringify(state.reactFlowConfig, graphReplacer);
         localStorage.setItem(REACTFLOW_CONFIG_KEY, configSerialized);
       }
+      
+      // Debug log of persisted state
+      console.log('GraphDataContext persisted:', debugGraphState(persistObj));
     } catch (e) {
       console.error('Failed to save graph data to storage:', e);
     }
@@ -275,9 +340,27 @@ export function GraphDataProvider({ children }) {
 
   // Use stateRef for stable callbacks, so these functions don't change on every render
   const setGraph = useCallback((graph) => {
-    const next = { ...stateRef.current, ...graph, lastSync: Date.now(), lastUpdated: Date.now() };
-    dispatch({ type: 'SET_GRAPH', payload: graph });
+    // ENHANCED: Ensure both edges and links are set
+    const enhancedGraph = { ...graph };
+    
+    if (Array.isArray(enhancedGraph.edges) && !Array.isArray(enhancedGraph.links)) {
+      enhancedGraph.links = [...enhancedGraph.edges];
+    } else if (Array.isArray(enhancedGraph.links) && !Array.isArray(enhancedGraph.edges)) {
+      enhancedGraph.edges = [...enhancedGraph.links];
+    }
+    
+    const next = { 
+      ...stateRef.current, 
+      ...enhancedGraph, 
+      lastSync: Date.now(), 
+      lastUpdated: Date.now() 
+    };
+    
+    dispatch({ type: 'SET_GRAPH', payload: enhancedGraph });
     broadcastGraph(next);
+    
+    // Debug log
+    console.log('GraphDataContext setGraph:', debugGraphState(next));
   }, [broadcastGraph]);
 
   // New action to set ReactFlow config separately
@@ -293,7 +376,14 @@ export function GraphDataProvider({ children }) {
   }, [broadcastGraph]);
 
   const updateEdges = useCallback((edges) => {
-    const next = { ...stateRef.current, edges, lastSync: Date.now(), lastUpdated: Date.now() };
+    // ENHANCED: Keep links in sync with edges
+    const next = { 
+      ...stateRef.current, 
+      edges, 
+      links: edges, // Keep links in sync with edges
+      lastSync: Date.now(), 
+      lastUpdated: Date.now() 
+    };
     dispatch({ type: 'UPDATE_EDGES', payload: edges });
     broadcastGraph(next);
   }, [broadcastGraph]);
@@ -341,16 +431,27 @@ export function GraphDataProvider({ children }) {
   // --- Selectors ---
 
   const getTrainingData = useCallback(() => {
-    // Always return nodes and edges, fallback to links if edges missing
-    let edges = state.edges;
-    if ((!edges || edges.length === 0) && Array.isArray(state.links) && state.links.length > 0) {
+    // ENHANCED: Correctly handle both edges and links
+    let edges = [];
+    
+    // Check all possible locations for edge data
+    if (Array.isArray(state.edges) && state.edges.length > 0) {
+      edges = state.edges;
+    } else if (Array.isArray(state.links) && state.links.length > 0) {
       edges = state.links;
+    } else if (state.graph) {
+      if (Array.isArray(state.graph.edges) && state.graph.edges.length > 0) {
+        edges = state.graph.edges;
+      } else if (Array.isArray(state.graph.links) && state.graph.links.length > 0) {
+        edges = state.graph.links;
+      }
     }
+    
     return {
       nodes: Array.isArray(state.nodes) ? state.nodes : [],
-      edges: Array.isArray(edges) ? edges : [],
+      edges: edges
     };
-  }, [state.nodes, state.edges, state.links]);
+  }, [state]);
 
   // --- Memoized Context Values ---
 
@@ -362,13 +463,15 @@ export function GraphDataProvider({ children }) {
 
   // --- State Validator ---
   const validateState = useCallback(() => {
-    // Returns true if state is valid (nodes/edges present and arrays)
+    // ENHANCED: Check for both edges and links
+    const hasEdges = (Array.isArray(state.edges) && state.edges.length > 0) || 
+                   (Array.isArray(state.links) && state.links.length > 0);
+    
     return (
       state &&
       Array.isArray(state.nodes) &&
-      Array.isArray(state.edges) &&
       state.nodes.length >= 0 &&
-      state.edges.length >= 0
+      hasEdges
     );
   }, [state]);
 
@@ -413,12 +516,20 @@ export function useGraphData() {
   if (context === undefined) {
     throw new Error('useGraphData must be used within a GraphDataProvider');
   }
-  // Defensive: always provide nodes/edges as arrays
+  
+  // ENHANCED: Ensure we return both edges and links
+  const edges = Array.isArray(context.edges) ? context.edges : [];
+  const links = Array.isArray(context.links) ? context.links : [];
+  
+  // If one is empty but the other isn't, use the non-empty one
+  const finalEdges = edges.length > 0 ? edges : links;
+  const finalLinks = links.length > 0 ? links : edges;
+  
   return {
     ...context,
     nodes: Array.isArray(context.nodes) ? context.nodes : [],
-    edges: Array.isArray(context.edges) ? context.edges : [],
-    links: Array.isArray(context.links) ? context.links : [],
+    edges: finalEdges,
+    links: finalLinks,
   };
 }
 

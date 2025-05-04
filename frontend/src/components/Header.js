@@ -7,7 +7,7 @@ const Header = () => {
     <header className="app-header">
       <div className="logo-container">
         <img src={logo} alt="Logo" className="app-logo" />
-        <span className="app-name">Graphcentric</span>
+        <span className="app-name">Araneos</span>
       </div>
       <nav className="nav-links">
         <NavLink

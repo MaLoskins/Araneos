@@ -6,6 +6,32 @@ import './TrainingTab.css';
 import { useGraphData, useGraphActions } from '../../context/GraphDataContext';
 import useGraph from '../../hooks/useGraph';
 
+// Debug function to inspect graph data structure
+function debugGraphData(graphContext) {
+  if (!graphContext) return {};
+  
+  // Safe access to potentially missing properties
+  const hasNodes = Array.isArray(graphContext.nodes);
+  const hasEdges = Array.isArray(graphContext.edges);
+  const hasLinks = Array.isArray(graphContext.links);
+  
+  // Check all possible properties that might contain edge data
+  const edgeProps = Object.keys(graphContext).filter(key => 
+    Array.isArray(graphContext[key]) && 
+    graphContext[key].length > 0 &&
+    graphContext[key][0] && 
+    (graphContext[key][0].source || graphContext[key][0].target)
+  );
+  
+  return {
+    nodeCount: hasNodes ? graphContext.nodes.length : 0,
+    edgeCount: hasEdges ? graphContext.edges.length : 0,
+    linkCount: hasLinks ? graphContext.links.length : 0,
+    possibleEdgeProps: edgeProps,
+    keys: Object.keys(graphContext)
+  };
+}
+
 /**
  * Training tab component that allows users to train GNN models on graph data
  * Provides model selection, hyperparameter configuration, and training management
@@ -17,15 +43,62 @@ const TrainingTab = (props) => {
   const graphContext = props.graphData || contextGraph;
   const ready = contextGraph.ready !== undefined ? contextGraph.ready : true;
 
-  // Debug: log mount/unmount and ready state
-  useEffect(() => {
-    // Mount/unmount effect for diagnostics (removed console logs for production)
-    return () => {};
-  }, []);
-
-  useEffect(() => {
-    // Effect for ready state and graphContext changes (removed console logs for production)
-  }, [ready, graphContext]);
+  // Enhanced function to find edge data regardless of where it's stored
+  function getAllEdges(graphData) {
+    if (!graphData) return [];
+    
+    // Debug output to console
+    console.log('Graph data debug:', debugGraphData(graphData));
+    
+    // Check for edges directly in graphData
+    if (Array.isArray(graphData.edges) && graphData.edges.length > 0) {
+      return graphData.edges;
+    }
+    
+    // Check for links directly in graphData
+    if (Array.isArray(graphData.links) && graphData.links.length > 0) {
+      return graphData.links;
+    }
+    
+    // Check if the data might be nested in a 'graph' property
+    if (graphData.graph) {
+      if (Array.isArray(graphData.graph.edges) && graphData.graph.edges.length > 0) {
+        return graphData.graph.edges;
+      }
+      if (Array.isArray(graphData.graph.links) && graphData.graph.links.length > 0) {
+        return graphData.graph.links;
+      }
+    }
+    
+    // For processed data, check if it might be in another property
+    for (const key of Object.keys(graphData)) {
+      const value = graphData[key];
+      if (typeof value === 'object' && value !== null) {
+        // Check if this property has edges or links
+        if (Array.isArray(value.edges) && value.edges.length > 0) {
+          return value.edges;
+        }
+        if (Array.isArray(value.links) && value.links.length > 0) {
+          return value.links;
+        }
+      }
+    }
+    
+    // Check if there's any array property that looks like edge data
+    for (const key of Object.keys(graphData)) {
+      const value = graphData[key];
+      if (Array.isArray(value) && 
+          value.length > 0 && 
+          value[0] && 
+          typeof value[0] === 'object' &&
+          (value[0].source !== undefined || value[0].target !== undefined)) {
+        return value;
+      }
+    }
+    
+    // No edge data found
+    return [];
+  }
 
   // Use the canonical graph validation from useGraph hook
   const { isValidForTraining } = useGraph();
@@ -35,12 +108,9 @@ const TrainingTab = (props) => {
     ? props.isGraphValidForTraining()
     : isValidForTraining;
 
-  // FIXED: Prioritize non-configOnly graph data and correctly process links/edges
+  // ENHANCED: More robust graph stats computation
   const graphStats = React.useMemo(() => {
-    if (
-      !graphContext ||
-      !Array.isArray(graphContext.nodes)
-    ) {
+    if (!graphContext || !Array.isArray(graphContext.nodes)) {
       return {
         nodes: 0,
         edges: 0,
@@ -50,16 +120,14 @@ const TrainingTab = (props) => {
       };
     }
     
-    // Check if there's a configOnly flag - if true and we have processed data, use that
-    const useReactFlowDataOnly = graphContext.configOnly === true;
-    
-    // Get edges from either edges or links property
-    const edgesData = Array.isArray(graphContext.edges) ? graphContext.edges :
-                     Array.isArray(graphContext.links) ? graphContext.links : [];
-    
+    // Get nodes from the context
     const nodeCount = graphContext.nodes.length;
+    
+    // IMPROVED: Get edges using the enhanced detection function
+    const edgesData = getAllEdges(graphContext);
     const edgeCount = edgesData.length;
     
+    // Check for node labels
     const hasLabels = graphContext.nodes.some(
       (node) =>
         node.label !== undefined &&
@@ -67,6 +135,7 @@ const TrainingTab = (props) => {
         node.label !== ""
     );
     
+    // Get unique labels
     let uniqueLabels = [];
     if (hasLabels) {
       uniqueLabels = [
@@ -91,29 +160,21 @@ const TrainingTab = (props) => {
       lastProcessed: graphContext.lastSync
         ? new Date(graphContext.lastSync)
         : null,
-      // Flag to indicate if this is just ReactFlow config data
-      isReactFlowConfigOnly: useReactFlowDataOnly 
     };
   }, [graphContext]);
 
-  // FIXED: Use the correct graph data for training, preferring processed data over ReactFlow config
+  // ENHANCED: Better graph data preparation for training
   const graphData = React.useMemo(() => {
-    if (!graphContext) return null;
+    if (!graphContext || !Array.isArray(graphContext.nodes)) return null;
     
-    // If this is just ReactFlow config data and we have processed data available, use that
-    if (graphContext.configOnly === true && graphContext.reactFlowConfig) {
-      return { 
-        nodes: graphContext.reactFlowConfig.nodes || [], 
-        links: graphContext.reactFlowConfig.edges || [] 
-      };
-    }
+    // Get edges using the enhanced detection function
+    const edgesData = getAllEdges(graphContext);
     
-    // Otherwise use the primary graph data
-    if (Array.isArray(graphContext.nodes) && 
-        (Array.isArray(graphContext.edges) || Array.isArray(graphContext.links))) {
+    // Only proceed if we have both nodes and edges
+    if (graphContext.nodes.length > 0 && edgesData.length > 0) {
       return { 
-        nodes: graphContext.nodes, 
-        links: Array.isArray(graphContext.edges) ? graphContext.edges : graphContext.links
+        nodes: graphContext.nodes,
+        links: edgesData // Always use 'links' for consistency with the API
       };
     }
     
@@ -123,8 +184,8 @@ const TrainingTab = (props) => {
   // Ensure UI updates on context changes (logs, warnings, lastSync)
   React.useEffect(() => {
     // This effect ensures the component re-renders when any relevant context state changes
-    // (logs, validationWarning, lastSync) for full UI synchronization
   }, [graphContext.trainingLogs, graphContext.validationWarning, graphContext.lastSync]);
+  
   // Training configuration state
   const [modelConfig, setModelConfig] = useState({
     model_name: 'GCN',
@@ -132,26 +193,19 @@ const TrainingTab = (props) => {
     learning_rate: 0.01,
     epochs: 200,
     dropout: 0.3,
-    // Optional model-specific parameters
     heads: 8,          // For GAT
     K: 3               // For ChebConv
   });
   
   // Training status and logs
   const [isTraining, setIsTraining] = useState(false);
-  // Use context for training logs
   const trainingLogs = graphContext.trainingLogs || [];
   const [metrics, setMetrics] = useState(null);
   const [trainingError, setTrainingError] = useState(null);
-  
-  // Reference to cancel training if needed
   const trainingRequestRef = useRef(null);
-  
-  // Auto-scroll for logs
   const logsContainerRef = useRef(null);
   
   // Reset logs when model changes
-  // Only depend on modelConfig.model_name to avoid infinite loop
   useEffect(() => {
     graphActions.clearTrainingLogs();
     setMetrics(null);
@@ -207,23 +261,23 @@ const TrainingTab = (props) => {
    * Start the training process
    */
   const handleStartTraining = () => {
-    // Debug log to confirm handler is called
-    // eslint-disable-next-line no-console
     // Validate graph data exists
     if (!graphData || !graphData.nodes || !graphData.links) {
       setTrainingError("No valid graph data available. Please create a graph first.");
       return;
     }
 
+    // Debug output of graph data being used for training
+    console.log('Training with graph data:', {
+      nodes: graphData.nodes.length,
+      links: graphData.links.length
+    });
+
     // Clear previous logs and errors
     graphActions.clearTrainingLogs();
     setMetrics(null);
     setTrainingError(null);
     setIsTraining(true);
-
-    // Prevent duplicate "Training started" log: only append if not already present
-    // (Assume clearTrainingLogs is synchronous and logs are empty after call)
-    // Do not append "Training started" log here; rely on backend message handler for all logs.
 
     // Prepare the configuration object based on selected model
     const configToSend = {
@@ -398,43 +452,28 @@ const TrainingTab = (props) => {
    * Render the graph summary section
    */
   const renderGraphSummary = () => {
-    // Defensive: Always render the summary container and log state
-    const hasGraph =
-      graphContext &&
-      Array.isArray(graphContext.nodes) &&
-      (Array.isArray(graphContext.edges) || Array.isArray(graphContext.links)) &&
-      graphContext.nodes.length > 0 &&
-      (graphContext.edges?.length > 0 || graphContext.links?.length > 0);
-
-    // Log rendering and data state for test diagnostics
-    if (hasGraph) {
-      // Removed debug log for production
-    } else {
-      // Removed debug log for production
-    }
-
     return (
       <div className="graph-summary" data-testid="graph-summary">
         <h3>Graph Summary</h3>
         <div className="summary-stats">
           <div className="stat-item">
             <span className="stat-label" data-testid="stat-nodes">Nodes:</span>
-            <span className="stat-value">{hasGraph ? graphStats.nodes : 0}</span>
+            <span className="stat-value">{graphStats.nodes}</span>
           </div>
           <div className="stat-item">
             <span className="stat-label" data-testid="stat-edges">Edges:</span>
-            <span className="stat-value">{hasGraph ? graphStats.edges : 0}</span>
+            <span className="stat-value">{graphStats.edges}</span>
           </div>
           <div className="stat-item">
             <span className="stat-label" data-testid="stat-has-labels">Has Labels:</span>
-            <span className="stat-value">{hasGraph ? (graphStats.hasLabels ? 'Yes' : 'No') : 'No'}</span>
+            <span className="stat-value">{graphStats.hasLabels ? 'Yes' : 'No'}</span>
           </div>
         </div>
 
         <div className="labels-section" data-testid="available-labels-section">
           <h3>Available Labels</h3>
           <div className="labels-list">
-            {hasGraph && graphStats.uniqueLabels && graphStats.uniqueLabels.length > 0 ? (
+            {graphStats.hasLabels && graphStats.uniqueLabels && graphStats.uniqueLabels.length > 0 ? (
               graphStats.uniqueLabels.map((label, index) => (
                 <span key={index} className="label-item">{label}</span>
               ))
@@ -491,15 +530,13 @@ const TrainingTab = (props) => {
     );
   }
 
-  // FIXED: Properly detect if we have graph data for training, checking both edges and links
-  const hasGraphData =
-    graphContext &&
-    Array.isArray(graphContext.nodes) &&
-    graphContext.nodes.length > 0 &&
-    ((Array.isArray(graphContext.edges) && graphContext.edges.length > 0) ||
-     (Array.isArray(graphContext.links) && graphContext.links.length > 0));
+  // IMPROVED: Check for both nodes and edges using our enhanced edge detection
+  const hasGraphData = graphContext && 
+                      Array.isArray(graphContext.nodes) && 
+                      graphContext.nodes.length > 0 &&
+                      getAllEdges(graphContext).length > 0;
 
-  // Show "No Graph Data Available" message if no graph data
+  // Show "No Graph Data Available" message if no graph data or no edges
   if (!hasGraphData) {
     return (
       <div className="training-tab" data-testid="training-tab-root">
