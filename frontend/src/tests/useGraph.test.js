@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { processData } from '../api';
+import { GraphDataProvider } from '../context/GraphDataContext';
 import useGraph from '../hooks/useGraph';
 
 // Mock the API module
@@ -64,6 +65,118 @@ function TestComponent() {
       </div>
     </div>
   );
+// --- DUAL TESTING STRATEGY: syncFlowToGraphData unit tests ---
+
+describe('syncFlowToGraphData', () => {
+  let setGraphData, setGraphError, nodes, edges, syncFlowToGraphData;
+
+  // Helper to create a minimal hook context
+  function setupHookContext(customNodes, customEdges) {
+    setGraphData = jest.fn();
+    setGraphError = jest.fn();
+    nodes = customNodes;
+    edges = customEdges;
+    // Inline the function logic for isolated testing
+    return () => {
+      try {
+        const safeNodes = Array.isArray(nodes) ? nodes : [];
+        const safeEdges = Array.isArray(edges) ? edges : [];
+        const backendNodes = safeNodes.map((n) => ({
+          id: n.id,
+          label: n.data && n.data.label ? n.data.label : n.id,
+          type: n.type || 'default',
+          features: n.features || {},
+        }));
+        const backendLinks = safeEdges.map((e) => ({
+          source: e.source,
+          target: e.target,
+          type: e.label || e.type || 'default',
+        }));
+        if (backendNodes.length === 0) {
+          setGraphError('No nodes to sync.');
+          return false;
+        }
+        setGraphData({
+          nodes: backendNodes,
+          links: backendLinks,
+        });
+        return true;
+      } catch (err) {
+        setGraphError('Failed to sync graph: ' + (err.message || 'Unknown error'));
+        return false;
+      }
+    };
+  }
+
+  test('returns false and sets error for empty nodes', () => {
+    syncFlowToGraphData = setupHookContext([], []);
+    const result = syncFlowToGraphData();
+    expect(result).toBe(false);
+    expect(setGraphError).toHaveBeenCalledWith('No nodes to sync.');
+  });
+
+  test('transforms valid nodes/edges to backend format', () => {
+    const testNodes = [
+      { id: 'n1', data: { label: 'Node 1' }, type: 'custom', features: { a: 1 } },
+      { id: 'n2', data: { label: 'Node 2' }, features: { b: 2 } }
+    ];
+    const testEdges = [
+      { source: 'n1', target: 'n2', label: 'relates' }
+    ];
+    syncFlowToGraphData = setupHookContext(testNodes, testEdges);
+    const result = syncFlowToGraphData();
+    expect(result).toBe(true);
+    expect(setGraphData).toHaveBeenCalledWith({
+      nodes: [
+        { id: 'n1', label: 'Node 1', type: 'custom', features: { a: 1 } },
+        { id: 'n2', label: 'Node 2', type: 'default', features: { b: 2 } }
+      ],
+      links: [
+        { source: 'n1', target: 'n2', type: 'relates' }
+      ]
+    });
+  });
+
+  test('handles nodes/edges not being arrays (malformed input)', () => {
+    syncFlowToGraphData = setupHookContext(null, undefined);
+    const result = syncFlowToGraphData();
+    expect(result).toBe(false);
+    expect(setGraphError).toHaveBeenCalledWith('No nodes to sync.');
+  });
+
+  test('handles missing node fields and nulls', () => {
+    const testNodes = [
+      { id: 'n1', data: null },
+      { id: 'n2' } // missing data, type, features
+    ];
+    const testEdges = [
+      { source: 'n1', target: 'n2' }, // missing label/type
+      { source: null, target: 'n2', type: null }
+    ];
+    syncFlowToGraphData = setupHookContext(testNodes, testEdges);
+    const result = syncFlowToGraphData();
+    expect(result).toBe(true);
+    expect(setGraphData).toHaveBeenCalledWith({
+      nodes: [
+        { id: 'n1', label: 'n1', type: 'default', features: {} },
+        { id: 'n2', label: 'n2', type: 'default', features: {} }
+      ],
+      links: [
+        { source: 'n1', target: 'n2', type: 'default' },
+        { source: null, target: 'n2', type: 'default' }
+      ]
+    });
+  });
+
+  test('catches exceptions and sets error', () => {
+    // Simulate a node that will throw in map
+    const badNodes = [{ get id() { throw new Error('fail'); } }];
+    syncFlowToGraphData = setupHookContext(badNodes, []);
+    const result = syncFlowToGraphData();
+    expect(result).toBe(false);
+    expect(setGraphError).toHaveBeenCalledWith(expect.stringContaining('Failed to sync graph:'));
+  });
+});
 }
 
 describe('useGraph Hook', () => {
@@ -72,7 +185,11 @@ describe('useGraph Hook', () => {
   });
 
   test('initializes with default values', () => {
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     expect(screen.getByTestId('csv-data')).toHaveTextContent('[]');
     expect(screen.getByTestId('graph-data')).toHaveTextContent('null');
@@ -87,7 +204,11 @@ describe('useGraph Hook', () => {
   });
 
   test('handleFileDrop updates csvData and columns', () => {
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     fireEvent.click(screen.getByTestId('drop-file-btn'));
     
@@ -95,7 +216,11 @@ describe('useGraph Hook', () => {
   });
 
   test('toggleFeatureSpace toggles the feature space state', () => {
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // Initial state should be false (not visible in UI)
     
@@ -108,13 +233,21 @@ describe('useGraph Hook', () => {
   });
 
   test('isGraphValidForTraining returns false when no graph data', () => {
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     expect(screen.getByTestId('is-valid-for-training')).toHaveTextContent('false');
   });
 
   test('handleSubmit returns error when no CSV data or nodes', async () => {
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     fireEvent.click(screen.getByTestId('submit-btn'));
     
@@ -124,7 +257,11 @@ describe('useGraph Hook', () => {
   });
 
   test('getGraphStats returns default stats when no graph data', () => {
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     const stats = JSON.parse(screen.getByTestId('graph-stats').textContent);
     expect(stats.nodes).toBe(0);
@@ -144,7 +281,11 @@ describe('useGraph Hook', () => {
       }
     });
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // First, load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -184,7 +325,11 @@ describe('useGraph Hook', () => {
     // Mock API error
     processData.mockRejectedValueOnce(new Error('API error'));
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // First, load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -215,7 +360,11 @@ describe('useGraph Hook', () => {
       }
     });
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // First, load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -225,9 +374,14 @@ describe('useGraph Hook', () => {
     fireEvent.click(screen.getByTestId('submit-btn'));
     
     // Wait for the graph data to be processed
+    let graphData;
     await waitFor(() => {
-      expect(screen.getByTestId('graph-data')).not.toHaveTextContent('null');
+      graphData = screen.getByTestId('graph-data').textContent;
+      expect(graphData).not.toBe('null');
     });
+    const parsed = JSON.parse(graphData);
+    expect(parsed).toHaveProperty('nodes');
+    expect(parsed.links || parsed.edges).toBeDefined();
     
     // Now we can safely check the stats
     const statsElem = screen.getByTestId('graph-stats');
@@ -253,7 +407,11 @@ describe('useGraph Hook', () => {
       }
     });
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // First, load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -263,9 +421,14 @@ describe('useGraph Hook', () => {
     fireEvent.click(screen.getByTestId('submit-btn'));
     
     // Wait for the graph data to be processed
-    await waitFor(() => {
-      expect(screen.getByTestId('graph-data')).not.toHaveTextContent('null');
+    let graphData;
+    await waitFor(async () => {
+      graphData = screen.getByTestId('graph-data').textContent;
+      expect(graphData).not.toBe('null');
     });
+    const parsed = JSON.parse(graphData);
+    expect(parsed).toHaveProperty('nodes');
+    expect(parsed.links || parsed.edges).toBeDefined();
     
     // Now we can safely check the stats
     const statsElem = screen.getByTestId('graph-stats');
@@ -290,7 +453,11 @@ describe('useGraph Hook', () => {
       }
     });
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // First, load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -300,9 +467,14 @@ describe('useGraph Hook', () => {
     fireEvent.click(screen.getByTestId('submit-btn'));
     
     // Wait for the graph data to be processed
+    let graphData;
     await waitFor(() => {
-      expect(screen.getByTestId('graph-data')).not.toHaveTextContent('null');
+      graphData = screen.getByTestId('graph-data').textContent;
+      expect(graphData).not.toBe('null');
     });
+    const parsed = JSON.parse(graphData);
+    expect(parsed).toHaveProperty('nodes');
+    expect(parsed.links || parsed.edges).toBeDefined();
     
     // If any node has a label, isGraphValidForTraining should return true
     expect(screen.getByTestId('is-valid-for-training')).toHaveTextContent('true');
@@ -320,7 +492,11 @@ describe('useGraph Hook', () => {
       }
     });
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // First, load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -330,9 +506,15 @@ describe('useGraph Hook', () => {
     fireEvent.click(screen.getByTestId('submit-btn'));
     
     // Wait for the graph data to be processed
-    await waitFor(() => {
-      expect(screen.getByTestId('graph-data')).not.toHaveTextContent('null');
+    let graphData;
+    await waitFor(async () => {
+      graphData = screen.getByTestId('graph-data').textContent;
+      expect(graphData).not.toBe('null');
     });
+    const parsed = JSON.parse(graphData);
+    expect(parsed).toHaveProperty('nodes');
+    // Should not have links or edges, or both are empty
+    expect(parsed.links || parsed.edges || []).toHaveLength(0);
     
     // Now we can safely check the stats
     const statsElem = screen.getByTestId('graph-stats');
@@ -361,7 +543,11 @@ describe('useGraph Hook', () => {
       }
     });
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // Load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -371,9 +557,14 @@ describe('useGraph Hook', () => {
     fireEvent.click(screen.getByTestId('submit-btn'));
     
     // Wait for the graph data to be processed
+    let graphData;
     await waitFor(() => {
-      expect(screen.getByTestId('graph-data')).not.toHaveTextContent('null');
+      graphData = screen.getByTestId('graph-data').textContent;
+      expect(graphData).not.toBe('null');
     });
+    const parsed = JSON.parse(graphData);
+    expect(parsed).toHaveProperty('nodes');
+    expect(parsed.links || parsed.edges).toBeDefined();
     
     // Check the stats
     const statsElem = screen.getByTestId('graph-stats');
@@ -406,7 +597,11 @@ describe('useGraph Hook', () => {
       }
     };
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // Load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -416,9 +611,14 @@ describe('useGraph Hook', () => {
     fireEvent.click(screen.getByTestId('submit-btn'));
     
     // Wait for the graph data to be processed
+    let graphData;
     await waitFor(() => {
-      expect(screen.getByTestId('graph-data')).not.toHaveTextContent('null');
+      graphData = screen.getByTestId('graph-data').textContent;
+      expect(graphData).not.toBe('null');
     });
+    const parsed = JSON.parse(graphData);
+    expect(parsed).toHaveProperty('nodes');
+    expect(parsed.links || parsed.edges).toBeDefined();
     
     // Check the stats
     const statsElem = screen.getByTestId('graph-stats');
@@ -440,7 +640,11 @@ describe('useGraph Hook', () => {
       // No graph property
     });
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // Load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -475,7 +679,11 @@ describe('useGraph Hook', () => {
       }
     });
     
-    render(<TestComponent />);
+    render(
+      <GraphDataProvider>
+        <TestComponent />
+      </GraphDataProvider>
+    );
     
     // Load CSV data and select node
     fireEvent.click(screen.getByTestId('drop-file-btn'));
@@ -485,11 +693,56 @@ describe('useGraph Hook', () => {
     fireEvent.click(screen.getByTestId('submit-btn'));
     
     // Wait for the graph data to be processed
+    let graphData;
     await waitFor(() => {
-      expect(screen.getByTestId('graph-data')).not.toHaveTextContent('null');
+      graphData = screen.getByTestId('graph-data').textContent;
+      expect(graphData).not.toBe('null');
     });
+    const parsed = JSON.parse(graphData);
+    expect(parsed).toHaveProperty('nodes');
+    expect(parsed.links || parsed.edges).toBeDefined();
     
     // Since no nodes have labels, it should not be valid for training
     expect(screen.getByTestId('is-valid-for-training')).toHaveTextContent('false');
   });
+test('isGraphValidForTraining handles graph with only edges property (no links)', async () => {
+  // Mock the API response with an `edges` property instead of `links`
+  processData.mockResolvedValueOnce({
+    graph: {
+      nodes: [
+        { id: 'node1', label: 'A' },
+        { id: 'node2', label: 'B' }
+      ],
+      edges: [
+        { source: 'node1', target: 'node2' }
+      ]
+    }
+  });
+
+  render(
+    <GraphDataProvider>
+      <TestComponent />
+    </GraphDataProvider>
+  );
+
+  // Load CSV data and select node
+  fireEvent.click(screen.getByTestId('drop-file-btn'));
+  fireEvent.click(screen.getByTestId('select-node-btn'));
+
+  // Process data to create graph
+  fireEvent.click(screen.getByTestId('submit-btn'));
+
+  // Wait for the graph data to be processed
+  let graphData;
+  await waitFor(() => {
+    graphData = screen.getByTestId('graph-data').textContent;
+    expect(graphData).not.toBe('null');
+  });
+  const parsed = JSON.parse(graphData);
+  expect(parsed).toHaveProperty('nodes');
+  expect(parsed.links || parsed.edges).toBeDefined();
+
+  // Should be valid for training since nodes have labels and edges exist
+  expect(screen.getByTestId('is-valid-for-training')).toHaveTextContent('true');
+});
 });

@@ -411,6 +411,7 @@ const ConfigurationPanel = ({
                   value={col}
                   checked={selectedNodes.includes(col)}
                   onChange={() => onSelectNode(col)}
+                  data-testid={`node-checkbox-${col}`}
                 />
                 <label htmlFor={`node-${col}`}>{col}</label>
               </div>
@@ -554,6 +555,7 @@ const ConfigurationPanel = ({
         <div className="process-content">
           <button
             className="process-button"
+            data-testid="process-button"
             onClick={() => onSubmit(labelColumn)}
             disabled={loading || selectedNodes.length === 0}
           >

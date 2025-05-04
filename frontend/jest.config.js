@@ -9,6 +9,8 @@ module.exports = {
   ],
   // Setup test environment
   testEnvironment: "jsdom",
+  // Setup global test environment (polyfills, etc.)
+  setupFilesAfterEnv: ["<rootDir>/src/setupTests.js"],
   // Provide module name mapper for non-JS assets
   moduleNameMapper: {
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",

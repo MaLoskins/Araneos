@@ -19,7 +19,7 @@ import sectionsInfo from '../sectionsInfo';
 // Register Chart.js components so chartjs-2 can use them
 ChartJS.register(BarElement, CategoryScale, LinearScale, Title, ChartTooltip, Legend);
 
-function Sidebar({ graphData, csvData }) {
+function Sidebar({ graphData, csvData, requestNavigation, isSyncing, syncError, status }) {
   const [degreeData, setDegreeData] = useState({ labels: [], values: [] });
 
   // Basic stats about the CSV (rows & columns)
@@ -120,14 +120,50 @@ function Sidebar({ graphData, csvData }) {
 
       {/* Navigation Links */}
       <div className="sidebar-nav">
-        <Link to="/" className="sidebar-nav-link">
+        <button
+          className="sidebar-nav-link"
+          role="tab"
+          aria-label="GraphNet"
+          data-testid="nav-graphnet"
+          onClick={() => requestNavigation ? requestNavigation("/") : null}
+          disabled={isSyncing}
+          style={{ background: "none", border: "none", padding: 0, width: "100%", textAlign: "left", cursor: isSyncing ? "not-allowed" : "pointer" }}
+        >
           <FiActivity className="sidebar-icon" />
           <span>GraphNet</span>
-        </Link>
-        <Link to="/train" className="sidebar-nav-link">
+        </button>
+        <button
+          className="sidebar-nav-link"
+          role="tab"
+          aria-label="Model Training"
+          data-testid="nav-model-training"
+          onClick={() => requestNavigation ? requestNavigation("/train") : null}
+          disabled={isSyncing}
+          style={{ background: "none", border: "none", padding: 0, width: "100%", textAlign: "left", cursor: isSyncing ? "not-allowed" : "pointer" }}
+        >
           <FiCpu className="sidebar-icon" />
           <span>Model Training</span>
-        </Link>
+        </button>
+        {isSyncing && (
+          <div
+            className="sidebar-sync-status"
+            data-testid="sidebar-sync-status"
+            style={{ color: "#6c63ff", marginTop: 8 }}
+          >
+            <span>Synchronizing graph data...</span>
+          </div>
+        )}
+        {syncError && (
+          <div
+            className="sidebar-sync-error"
+            data-testid="sidebar-sync-error"
+            style={{ color: "#d32f2f", marginTop: 8 }}
+          >
+            <span>
+              Error syncing: {typeof syncError === "string" ? syncError : (syncError?.message || "Unknown error")}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 1) Basic Graph Info */}

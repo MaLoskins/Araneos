@@ -1,14 +1,19 @@
 // src/hooks/useGraph.js
-import { useState } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { processData } from '../api';
 import { useNodesState, useEdgesState, addEdge } from 'react-flow-renderer';
+import { useGraphData, useGraphActions } from '../context/GraphDataContext';
 
 /**
  * Custom hook for managing graph data across the application.
  * Provides state management, validation, and cross-tab persistence.
  */
 const useGraph = () => {
-  // Data state management
+  // Context state for graph data
+  const graphContext = useGraphData();
+  const graphActions = useGraphActions();
+
+  // Local UI state (not persisted)
   const [csvData, setCsvData] = useState([]);
   const [columns, setColumns] = useState([]);
   const [config, setConfig] = useState({
@@ -18,13 +23,11 @@ const useGraph = () => {
     features: [],
   });
 
-  // Graph state and processing status
-  const [graphData, setGraphData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lastProcessedTime, setLastProcessedTime] = useState(null);
   const [graphError, setGraphError] = useState(null);
 
-  // ReactFlow state
+  // ReactFlow state (local, but updates context on sync)
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -37,29 +40,30 @@ const useGraph = () => {
   const [useFeatureSpace, setUseFeatureSpace] = useState(false);
   const [featureConfigs, setFeatureConfigs] = useState([]);
 
-  const handleFileDrop = (data, fields) => {
+  // --- Handlers ---
+
+  const handleFileDrop = useCallback((data, fields) => {
     setCsvData(data);
     setColumns(fields);
 
-    // reset everything
     setConfig({
       nodes: [],
       relationships: [],
       graph_type: 'directed',
       features: []
     });
-    setGraphData(null);
+    graphActions.resetGraph();
     setNodes([]);
     setEdges([]);
     setUseFeatureSpace(false);
     setFeatureConfigs([]);
-  };
+  }, [graphActions, setNodes, setEdges]);
 
-  const toggleFeatureSpace = () => {
+  const toggleFeatureSpace = useCallback(() => {
     setUseFeatureSpace((prev) => !prev);
-  };
+  }, []);
 
-  const handleSelectNode = (column) => {
+  const handleSelectNode = useCallback((column) => {
     const alreadySelected = config.nodes.find((n) => n.id === column);
     if (alreadySelected) {
       setConfig((prev) => ({
@@ -88,14 +92,14 @@ const useGraph = () => {
         }
       ]);
     }
-  };
+  }, [config.nodes, setConfig, setNodes, setEdges]);
 
-  const onConnectHandler = (connection) => {
+  const onConnectHandler = useCallback((connection) => {
     setCurrentEdge(connection);
     setRelationshipModalIsOpen(true);
-  };
+  }, []);
 
-  const onSaveRelationship = ({ relationshipType }) => {
+  const onSaveRelationship = useCallback(({ relationshipType }) => {
     if (!currentEdge) return;
 
     const newEdge = {
@@ -119,14 +123,14 @@ const useGraph = () => {
 
     setRelationshipModalIsOpen(false);
     setCurrentEdge(null);
-  };
+  }, [currentEdge, setEdges, setConfig]);
 
-  const onNodeClickHandler = (event, node) => {
+  const onNodeClickHandler = useCallback((event, node) => {
     setCurrentNode(node);
     setNodeEditModalIsOpen(true);
-  };
+  }, []);
 
-  const handleSaveNodeEdit = ({ nodeType, nodeFeatures }) => {
+  const handleSaveNodeEdit = useCallback(({ nodeType, nodeFeatures }) => {
     setConfig((prev) => {
       const newNodes = prev.nodes.map((n) => {
         if (n.id === currentNode.id) {
@@ -157,15 +161,11 @@ const useGraph = () => {
 
     setNodeEditModalIsOpen(false);
     setCurrentNode(null);
-  };
+  }, [currentNode, setConfig, setNodes]);
 
-  /**
-   * Process and submit graph data for creation
-   * @param {string} labelColumn - The column to use as labels for nodes
-   * @returns {Promise<boolean>} - Success status of the operation
-   */
-  const handleSubmit = async (labelColumn) => {
-    // Validate required data is present
+  // --- Graph Processing and Submission ---
+
+  const handleSubmit = useCallback(async (labelColumn) => {
     if (!csvData.length || !config.nodes.length) {
       setGraphError('Please upload CSV and select at least one node.');
       return false;
@@ -173,7 +173,7 @@ const useGraph = () => {
 
     setLoading(true);
     setGraphError(null);
-    
+
     try {
       const extendedConfig = {
         ...config,
@@ -186,9 +186,9 @@ const useGraph = () => {
       };
 
       const response = await processData(csvData, extendedConfig);
-      
+
       if (response.graph) {
-        setGraphData(response.graph);
+        graphActions.setGraph(response.graph);
         setLastProcessedTime(new Date());
         return true;
       } else {
@@ -202,72 +202,158 @@ const useGraph = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [csvData, config, featureConfigs, useFeatureSpace, graphActions]);
 
-  /**
-   * Check if the current graph is valid for training
-   * @returns {boolean} - Whether the graph is valid
-   */
-  const isGraphValidForTraining = () => {
-    if (!graphData || !graphData.nodes || !graphData.links) {
-      return false;
-    }
-    
-    // Check if graph has nodes with labels
-    return graphData.nodes.some(node => node.label !== undefined);
-  };
+  // --- Graph Validation and Stats (Reactive, Memoized) ---
+  // Defensive: always treat context as possibly undefined/null
 
-  /**
-   * Get the count of nodes and edges in the current graph
-   * @returns {Object} - Counts of nodes and edges
-   */
-  const getGraphStats = () => {
-    if (!graphData) {
-      return { nodes: 0, edges: 0, hasLabels: false };
-    }
-    
-    const nodeCount = graphData.nodes ? graphData.nodes.length : 0;
-    const edgeCount = graphData.links ? graphData.links.length : 0;
-    const hasLabels = graphData.nodes ? graphData.nodes.some(node => node.label !== undefined) : false;
-    
-    // Count unique labels if they exist
-    let uniqueLabels = [];
-    if (hasLabels && graphData.nodes) {
-      uniqueLabels = [...new Set(graphData.nodes
-        .filter(node => node.label !== undefined)
-        .map(node => node.label))];
-    }
-    
+  const graphStats = useMemo(() => {
+    const graphData = graphContext || {};
+    const nodesArr = Array.isArray(graphData.nodes) ? graphData.nodes : [];
+    // Support both 'edges' and 'links' for compatibility (fixes validation bug)
+    const edgesArr = Array.isArray(graphData.edges)
+      ? graphData.edges
+      : Array.isArray(graphData.links)
+      ? graphData.links
+      : [];
+    const nodeCount = nodesArr.length;
+    const edgeCount = edgesArr.length;
+    const labelNodes = nodesArr.filter(node => node && node.label !== undefined && node.label !== null);
+    const hasLabels = labelNodes.length > 0;
+    const uniqueLabels = hasLabels
+      ? [...new Set(labelNodes.map(node => node.label))]
+      : [];
+    // For label stats: count per label
+    const labelStats = hasLabels
+      ? labelNodes.reduce((acc, node) => {
+          acc[node.label] = (acc[node.label] || 0) + 1;
+          return acc;
+        }, {})
+      : {};
+    // Last updated: prefer context lastSync, fallback to local lastProcessedTime
+    const lastUpdated =
+      typeof graphData.lastSync === 'number'
+        ? new Date(graphData.lastSync)
+        : lastProcessedTime;
+
     return {
-      nodes: nodeCount,
-      edges: edgeCount,
+      nodeCount,
+      edgeCount,
       hasLabels,
       uniqueLabels,
-      lastProcessed: lastProcessedTime
+      labelStats,
+      lastUpdated,
     };
+  }, [graphContext, lastProcessedTime]);
+
+  // Validation for training: must have nodes, edges, and at least one label
+  const isValidForTraining = useMemo(() => {
+    const { nodeCount, edgeCount, hasLabels } = graphStats;
+    const valid = nodeCount > 0 && edgeCount > 0 && hasLabels;
+    // Debug logging: show validation result and data
+    // eslint-disable-next-line no-console
+    console.log('[isValidForTraining] nodeCount:', nodeCount, 'edgeCount:', edgeCount, 'hasLabels:', hasLabels, '=>', valid);
+    return valid;
+  }, [graphStats]);
+
+  // UI: Available labels (for dropdowns, warnings, etc.)
+  const availableLabels = useMemo(() => graphStats.uniqueLabels, [graphStats]);
+
+  // UI: Validation warnings
+  const validationWarning = useMemo(() => {
+    if (!graphContext) return 'No graph data loaded.';
+    if (graphStats.nodeCount === 0) return 'No nodes in graph.';
+    if (graphStats.edgeCount === 0) return 'No edges in graph.';
+    if (!graphStats.hasLabels) return 'No labels found on nodes.';
+    return null;
+  }, [graphContext, graphStats]);
+
+  // --- Synchronize ReactFlow state with Context Graph Data ---
+
+// FIXED syncFlowToGraphData function that checks both nodes and edges
+const syncFlowToGraphData = useCallback(async () => {
+  /* 1. Translate the current React‑Flow canvas ------------------ */
+  const backendNodes = (Array.isArray(nodes) ? nodes : []).map(n => ({
+    id       : n.id,
+    label    : n.data?.label ?? n.id,
+    type     : n.type ?? 'default',
+    features : n.features ?? {}
+  }));
+
+  const backendEdges = (Array.isArray(edges) ? edges : []).map(e => ({
+    source : e.source,
+    target : e.target,
+    type   : e.label ?? e.type ?? 'default'
+  }));
+
+  /* 2. Safety guard – do NOT overwrite processed graph under these conditions:
+     - If the processed graph has more nodes OR more edges
+     - If the processed graph has the same number of nodes but more edges
+     - This ensures we don't lose the processed graph with many edges
+  */
+  const processedNodesCount = graphContext?.nodes?.length ?? 0;
+  const processedEdgesCount = (graphContext?.edges?.length ?? 0) || (graphContext?.links?.length ?? 0);
+  
+  // Only overwrite if we're not losing data (nodes OR edges)
+  if (processedNodesCount > backendNodes.length || processedEdgesCount > backendEdges.length) {
+    console.log(`[syncFlowToGraphData] Skipped: processed graph is larger (Nodes: ${processedNodesCount} vs ${backendNodes.length}, Edges: ${processedEdgesCount} vs ${backendEdges.length}).`);
+    return true;
+  }
+
+  // Additional guard for equal nodes but more edges in processed graph
+  if (processedNodesCount === backendNodes.length && processedEdgesCount > backendEdges.length) {
+    console.log(`[syncFlowToGraphData] Skipped: equal nodes but processed graph has more edges (${processedEdgesCount} vs ${backendEdges.length}).`);
+    return true;
+  }
+
+  if (backendNodes.length === 0) {
+    setGraphError('No nodes to sync.');
+    return false;
+  }
+
+  /* 3. Store ReactFlow config separately from processed graph */
+  // Save the ReactFlow configuration in a separate field
+  const reactFlowConfig = {
+    nodes: backendNodes,
+    edges: backendEdges,
+    configOnly: true
   };
+
+  // Check if we already have a processed graph with more data
+  if (graphContext && !graphContext.configOnly && (graphContext.nodes?.length > 0 || graphContext.edges?.length > 0)) {
+    // Keep the processed graph intact, just update the reactFlowConfig
+    graphActions.setReactFlowConfig(reactFlowConfig);
+  } else {
+    // No processed data yet, set the graph with the ReactFlow configuration
+    graphActions.setGraph({ nodes: backendNodes, edges: backendEdges });
+  }
+
+  /* Wait for persistence to finish (if provided) */
+  if (typeof graphContext?.waitForPersistence === 'function') {
+    await graphContext.waitForPersistence();
+  }
+  return true;
+}, [nodes, edges, graphActions, graphContext, setGraphError]);
+
+  // --- Return API ---
 
   return {
     // Data and configuration
     csvData,
     columns,
     config,
-    graphData,
-    
+    graphData: graphContext,
     // Status
     loading,
     graphError,
-    
     // ReactFlow state
     nodes,
     edges,
-    
     // Modal state
     nodeEditModalIsOpen,
     currentNode,
     relationshipModalIsOpen,
     currentEdge,
-    
     // Event handlers
     handleFileDrop,
     handleSelectNode,
@@ -280,16 +366,83 @@ const useGraph = () => {
     setNodeEditModalIsOpen,
     setRelationshipModalIsOpen,
     handleSaveNodeEdit,
-
     // Feature configuration
     useFeatureSpace,
     toggleFeatureSpace,
     featureConfigs,
     setFeatureConfigs,
-    
-    // Graph validation and stats methods
-    isGraphValidForTraining,
-    getGraphStats
+    // --- Derived, memoized state for UI and validation ---
+    graphStats,           // { nodeCount, edgeCount, hasLabels, uniqueLabels, labelStats, lastUpdated }
+    isValidForTraining,   // boolean
+    availableLabels,      // string[]
+    validationWarning,    // string|null
+    // Synchronization method
+    syncFlowToGraphData,
+    /**
+     * Returns whether the current graph is valid for training.
+     * Matches the logic of isValidForTraining and TrainingTab.js.
+     * @returns {boolean}
+     */
+    isGraphValidForTraining: () => isValidForTraining,
+
+    /**
+     * Returns graph statistics in the format expected by tests and integration.
+     * Handles all edge cases (empty/null/undefined graph data) safely.
+     * @returns {{
+     *   nodes: number,
+     *   edges: number,
+     *   hasLabels: boolean,
+     *   uniqueLabels: string[],
+     *   lastProcessed: string|null,
+     *   labelCounts?: Object
+     * }}
+     */
+    getGraphStats: () => {
+      // Defensive: always treat context as possibly undefined/null
+      const graphData = graphContext || {};
+      // Support both 'edges' and 'links' for compatibility
+      const nodesArr = Array.isArray(graphData.nodes) ? graphData.nodes : [];
+      const edgesArr = Array.isArray(graphData.edges)
+        ? graphData.edges
+        : Array.isArray(graphData.links)
+        ? graphData.links
+        : [];
+      const nodeCount = nodesArr.length;
+      const edgeCount = edgesArr.length;
+      const labelNodes = nodesArr.filter(
+        (node) => node && node.label !== undefined && node.label !== null
+      );
+      const hasLabels = labelNodes.length > 0;
+      const uniqueLabels = hasLabels
+        ? [...new Set(labelNodes.map((node) => node.label))]
+        : [];
+      // For label stats: count per label
+      const labelCounts = hasLabels
+        ? labelNodes.reduce((acc, node) => {
+            acc[node.label] = (acc[node.label] || 0) + 1;
+            return acc;
+          }, {})
+        : {};
+      // Last updated: prefer context lastSync, fallback to local lastProcessedTime
+      const lastUpdated =
+        typeof graphData.lastSync === 'number'
+          ? new Date(graphData.lastSync)
+          : lastProcessedTime;
+      // For test compatibility, provide lastProcessed as ISO string or null
+      const lastProcessed =
+        lastUpdated instanceof Date && !isNaN(lastUpdated)
+          ? lastUpdated.toISOString()
+          : null;
+
+      return {
+        nodes: nodeCount,
+        edges: edgeCount,
+        hasLabels,
+        uniqueLabels,
+        lastProcessed,
+        labelCounts,
+      };
+    },
   };
 };
 

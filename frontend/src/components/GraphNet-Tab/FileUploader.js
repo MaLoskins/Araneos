@@ -45,7 +45,7 @@ const FileUploader = ({ onFileDrop }) => {
         {...getRootProps()}
         className={`dropzone ${isDragActive ? 'active' : ''}`}
       >
-        <input {...getInputProps()} />
+        <input {...getInputProps()} data-testid="file-input" />
         {isDragActive ? (
           <p>Drop the CSV file here...</p>
         ) : (

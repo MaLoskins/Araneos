@@ -35,24 +35,63 @@ const GraphVisualizer = ({ graphData, onNodeClick }) => {
   }, [containerRef]);
 
   useEffect(() => {
-    if (graphData?.nodes && graphData?.links) {
-      const degrees = {};
-      graphData.links.forEach((link) => {
-        degrees[link.source] = (degrees[link.source] || 0) + 1;
-        degrees[link.target] = (degrees[link.target] || 0) + 1;
+    if (graphData?.nodes && (graphData?.links || graphData?.edges)) {
+      // Always use 'links' for D3, mapping from 'edges' if necessary
+      const links = graphData.links
+        ? JSON.parse(JSON.stringify(graphData.links))
+        : JSON.parse(JSON.stringify(graphData.edges));
+
+      const nodes = JSON.parse(JSON.stringify(graphData.nodes));
+      const nodeMap = new Map();
+      nodes.forEach(node => {
+        nodeMap.set(node.id, node);
       });
-      const newNodes = graphData.nodes.map((node) => ({
-        ...node,
-        val: degrees[node.id] || 1,
-      }));
-      setProcessedGraphData({ ...graphData, nodes: newNodes });
+
+      // Filter out links whose source/target are not present in nodes
+      const validLinks = links.filter(link => {
+        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+        return nodeMap.has(sourceId) && nodeMap.has(targetId);
+      });
+
+      // Calculate node degrees for sizing
+      const degrees = {};
+      validLinks.forEach(link => {
+        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+
+        degrees[sourceId] = (degrees[sourceId] || 0) + 1;
+        degrees[targetId] = (degrees[targetId] || 0) + 1;
+
+        // Replace references directly in the links array
+        link.source = sourceId;
+        link.target = targetId;
+      });
+
+      // Update node properties
+      nodes.forEach(node => {
+        node.val = degrees[node.id] || 1;
+        node.type = node.type || 'default';
+        if (node.label === undefined) {
+          node.label = node.id;
+        }
+      });
+
+      setProcessedGraphData({
+        nodes,
+        links: validLinks,
+        directed: graphData.directed
+      });
     }
   }, [graphData]);
 
-  const isDirected = graphData && graphData.directed === true;
+  // Configure the background color from CSS variables
   const backgroundColor = getComputedStyle(document.documentElement)
     .getPropertyValue('--background-color')
     .trim() || '#121212';
+
+  // Determine if directed graph
+  const isDirected = graphData && graphData.directed === true;
 
   return (
     <div className="graph-section">
@@ -70,7 +109,7 @@ const GraphVisualizer = ({ graphData, onNodeClick }) => {
             graphData={processedGraphData}
             nodeAutoColorBy="type"
             linkAutoColorBy="type"
-            nodeLabel="id"
+            nodeLabel={(node) => `${node.id}${node.label && node.label !== node.id ? ` (${node.label})` : ''}`}
             linkLabel="type"
             nodeVal={(node) => node.val || 1}
             onNodeClick={(node) => {
@@ -90,12 +129,22 @@ const GraphVisualizer = ({ graphData, onNodeClick }) => {
         {hoverNode && (
           <div className="node-tooltip">
             <strong>ID:</strong> {hoverNode.id}<br />
-            <strong>Type:</strong> {hoverNode.type}<br />
-            {hoverNode.features && Object.keys(hoverNode.features).map((key) => (
-              <div key={key}>
-                <strong>{key}:</strong> {Array.isArray(hoverNode.features[key]) ? hoverNode.features[key].slice(0, 3).map(f => JSON.stringify(f)).join(', ') + '...' : JSON.stringify(hoverNode.features[key])}
+            {hoverNode.label && hoverNode.label !== hoverNode.id && (
+              <><strong>Label:</strong> {hoverNode.label}<br /></>
+            )}
+            <strong>Type:</strong> {hoverNode.type || 'default'}<br />
+            {hoverNode.features && Object.keys(hoverNode.features).length > 0 && (
+              <div>
+                <strong>Features:</strong>
+                {Object.entries(hoverNode.features).map(([key, value]) => (
+                  <div key={key} style={{ marginLeft: '10px' }}>
+                    <strong>{key}:</strong> {Array.isArray(value) 
+                      ? value.slice(0, 3).map(f => JSON.stringify(f)).join(', ') + (value.length > 3 ? '...' : '')
+                      : JSON.stringify(value)}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

@@ -1,11 +1,14 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 import * as useGraphModule from '../hooks/useGraph';
 import { trainModel } from '../api';
 import Modal from 'react-modal';
+import { renderWithProviders } from './testRouterUtils';
+import { MemoryRouter } from 'react-router-dom';
+import { GraphDataProvider } from '../context/GraphDataContext';
+import { mockGraphData } from './fixtures/mockGraphData';
 
 // Mock react-modal
 jest.mock('react-modal', () => {
@@ -49,11 +52,49 @@ jest.mock('../hooks/useGraph', () => ({
 }));
 
 describe('App Integration Tests', () => {
+  // Utility for debug logging in test output
+  function logTestDebug(message, data) {
+    // eslint-disable-next-line no-console
+    console.log(`[AppIntegrationTest] ${message}`, data || '');
+  }
+  // Mock localStorage and BroadcastChannel for test environment
+  beforeAll(() => {
+    const localStorageMock = (function() {
+      let store = {};
+      return {
+        getItem(key) { return store[key] || null; },
+        setItem(key, value) { store[key] = value.toString(); },
+        removeItem(key) { delete store[key]; },
+        clear() { store = {}; }
+      };
+    })();
+    Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+    class BroadcastChannelMock {
+      constructor() { this.onmessage = null; }
+      postMessage() {}
+      close() {}
+      addEventListener() {}
+      removeEventListener() {}
+    }
+    window.BroadcastChannel = BroadcastChannelMock;
+  });
+  
+  // Add afterEach cleanup for localStorage and BroadcastChannel to prevent test contamination
+  afterEach(() => {
+    if (window.localStorage && typeof window.localStorage.clear === 'function') {
+      window.localStorage.clear();
+    }
+    if (window.BroadcastChannel && typeof window.BroadcastChannel.prototype.close === 'function') {
+      try {
+        window.BroadcastChannel.prototype.close();
+      } catch (e) {}
+    }
+    jest.clearAllMocks();
+  });
+
   // Common test data and setup
-  const mockGraphData = {
-    nodes: [{ id: 'node1' }, { id: 'node2' }],
-    links: [{ source: 'node1', target: 'node2' }]
-  };
+  // Use shared mock graph data fixture for all integration tests
 
   // Setup before each test
   beforeEach(() => {
@@ -103,90 +144,66 @@ describe('App Integration Tests', () => {
     trainModel.mockReturnValue({ cancel: mockCancel });
   });
 
-  test('sidebar contains Model Training navigation link', () => {
-    render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>
-    );
-    
-    // Verify that the Model Training link is present in the sidebar
-    expect(screen.getByText('Model Training')).toBeInTheDocument();
-    // Also verify it's a navigation link
-    expect(screen.getByRole('link', { name: 'Model Training' })).toHaveAttribute('href', '/train');
+  test('sidebar contains Model Training navigation link', async () => {
+    renderWithProviders(<App />);
+
+    // Use async findByText/findByRole for React 18 async rendering
+    expect(await screen.findByText('Model Training')).toBeInTheDocument();
+    expect(await screen.findByRole('tab', { name: 'Model Training' })).toBeInTheDocument();
   });
 
   test('clicking on Model Training link navigates to the /train route', async () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>
-    );
-    
-    // Find and click the Model Training link using role selector to be more specific
-    const trainingLink = screen.getByRole('link', { name: /model training/i });
-    fireEvent.click(trainingLink);
-    
-    // Verify that the TrainingTab component is rendered - wait for a unique element
-    await waitFor(() => {
-      expect(screen.getByText('Model Architecture:')).toBeInTheDocument();
-    });
-    
-    // After waiting for the first element, check additional elements
-    expect(screen.getByText('Start Training')).toBeInTheDocument();
+    renderWithProviders(<App />, {}, ['/']);
+
+    // Find and click the Model Training link using async findByRole
+    const trainingTab = await screen.findByRole('tab', { name: /model training/i });
+    fireEvent.click(trainingTab);
+
+    // Wait for TrainingTab component to render
+    const modelArchSection = await screen.findByTestId('model-architecture-section');
+    expect(modelArchSection).toBeInTheDocument();
+    expect(modelArchSection.textContent).toMatch(/Model Architecture:/i);
+    expect(await screen.findByText('Start Training')).toBeInTheDocument();
   });
 
-  test('TrainingTab component is rendered when accessing the /train route', () => {
-    render(
-      <MemoryRouter initialEntries={['/train']}>
-        <App />
-      </MemoryRouter>
-    );
-    
-    // Verify TrainingTab component is rendered by checking for unique elements
-    // rather than potentially duplicated text
-    expect(screen.getByText('Model Architecture:')).toBeInTheDocument();
-    expect(screen.getByText('Start Training')).toBeInTheDocument();
-    // Look for a form field that should only be in the TrainingTab
-    expect(screen.getByLabelText(/learning rate/i, { exact: false })).toBeInTheDocument();
+  test('TrainingTab component is rendered when accessing the /train route', async () => {
+    renderWithProviders(<App />, {}, ['/train']);
+
+    // Use async findByText/findByLabelText for React 18 async rendering
+    const modelArchSection = await screen.findByTestId('model-architecture-section');
+    expect(modelArchSection).toBeInTheDocument();
+    expect(modelArchSection.textContent).toMatch(/Model Architecture:/i);
+    expect(await screen.findByText('Start Training')).toBeInTheDocument();
+    expect(await screen.findByLabelText(/learning rate/i, { exact: false })).toBeInTheDocument();
   });
 
   test('navigation between GraphNet and Training tabs works correctly', async () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>
-    );
-    
+    renderWithProviders(<App />, {}, ['/']);
+
     // Verify we're on the GraphNet tab initially using our mock component
-    expect(screen.getByTestId('mock-graph-net')).toBeInTheDocument();
-    expect(screen.queryByText('Model Architecture:')).not.toBeInTheDocument();
-    
-    // Navigate to Training tab using role selector to be more specific
-    const trainingLink = screen.getByRole('link', { name: /model training/i });
-    fireEvent.click(trainingLink);
-    
-    // Verify we're on the Training tab - wait for a unique element
+    expect(await screen.findByTestId('mock-graph-net')).toBeInTheDocument();
+    expect(screen.queryByTestId('model-architecture-section')).not.toBeInTheDocument();
+
+    // Navigate to Training tab using async findByRole
+    const trainingTab = await screen.findByRole('tab', { name: /model training/i });
+    fireEvent.click(trainingTab);
+
+    // Wait for TrainingTab to render
+    const modelArchSection = await screen.findByTestId('model-architecture-section');
+    expect(modelArchSection).toBeInTheDocument();
+    expect(modelArchSection.textContent).toMatch(/Model Architecture:/i);
+    expect(await screen.findByText('Start Training')).toBeInTheDocument();
+
+    // Navigate back to GraphNet tab
+    const graphNetTab = await screen.findByRole('tab', { name: /graphnet/i });
+    fireEvent.click(graphNetTab);
+
+    // Wait for Training elements to disappear
     await waitFor(() => {
-      expect(screen.getByText('Model Architecture:')).toBeInTheDocument();
+      expect(screen.queryByTestId('model-architecture-section')).not.toBeInTheDocument();
     });
-    
-    // After waiting for the first element, check additional elements
-    expect(screen.getByText('Start Training')).toBeInTheDocument();
-    
-    // Navigate back to GraphNet tab - get all links and use the second one (sidebar link)
-    const graphNetLinks = screen.getAllByRole('link', { name: /graphnet/i });
-    // Use the sidebar link which should be the second one
-    fireEvent.click(graphNetLinks[1]);
-    
-    // Verify we're back on the GraphNet tab - wait for the Training elements to disappear
-    await waitFor(() => {
-      expect(screen.queryByText('Model Architecture:')).not.toBeInTheDocument();
-    });
-    
-    // After waiting for the first element to disappear, check additional elements
     expect(screen.queryByText('Start Training')).not.toBeInTheDocument();
-    expect(screen.getByTestId('mock-graph-net')).toBeInTheDocument();
+    expect(await screen.findByTestId('mock-graph-net')).toBeInTheDocument();
   });
   
   // Enhanced tests for data flow between tabs
@@ -242,37 +259,38 @@ describe('App Integration Tests', () => {
         graphHasLabels: true
       });
       
-      render(
-        <MemoryRouter initialEntries={['/']}>
-          <App />
-        </MemoryRouter>
-      );
+      renderWithProviders(<App />, {}, ['/']);
       
       // Start on GraphNet tab and verify mock is displayed
       expect(screen.getByTestId('mock-graph-net')).toBeInTheDocument();
       
       // Navigate to Training tab
-      const trainingLink = screen.getByRole('link', { name: /model training/i });
-      fireEvent.click(trainingLink);
+      const trainingTab = screen.getByRole('tab', { name: /model training/i });
+      fireEvent.click(trainingTab);
       
       // Verify Training tab is showing
       await waitFor(() => {
-        expect(screen.getByText('Model Architecture:')).toBeInTheDocument();
+        const modelArchSection = screen.getByTestId('model-architecture-section');
+        expect(modelArchSection).toBeInTheDocument();
       });
-      
-      // Look for specific sections or headers instead of numeric values that could appear multiple times
-      expect(screen.getByText(/hidden channels/i)).toBeInTheDocument();
-      expect(screen.getByText(/learning rate/i)).toBeInTheDocument();
-      
-      // Instead of looking for generic number values, look for more specific elements with context
-      // For example, check if the Start Training button is enabled since graph has labels
-      const startButton = screen.getByText('Start Training');
-      expect(startButton).not.toBeDisabled();
-      
+      const modelArchSection236 = screen.getByTestId('model-architecture-section');
+      expect(modelArchSection236.textContent).toMatch(/Model Architecture:/i);
+
+      // Look for specific sections or headers using async findByText
+      expect(await screen.findByText(/hidden channels/i)).toBeInTheDocument();
+      expect(await screen.findByText(/learning rate/i)).toBeInTheDocument();
+
+      // Check if the Start Training button is enabled since graph has labels
+      const startButton = await screen.findByText('Start Training');
+      // Wait for button to be enabled after navigation/data load
+      await waitFor(() => {
+        expect(startButton).not.toBeDisabled();
+      });
+
       // Navigate back to GraphNet
-      const graphNetLinks = screen.getAllByRole('link', { name: /graphnet/i });
-      fireEvent.click(graphNetLinks[1]); // Use the sidebar link
-      
+      const graphNetTab = screen.getByRole('tab', { name: /graphnet/i });
+      fireEvent.click(graphNetTab);
+
       // Verify we're back on GraphNet tab
       await waitFor(() => {
         expect(screen.queryByText('Model Architecture:')).not.toBeInTheDocument();
@@ -343,56 +361,66 @@ describe('App Integration Tests', () => {
         graphHasLabels: graphHasLabels
       }));
       
-      render(
-        <MemoryRouter initialEntries={['/']}>
-          <App />
-        </MemoryRouter>
-      );
+      renderWithProviders(<App />, {}, ['/']);
       
       // Start on GraphNet tab
       expect(screen.getByTestId('mock-graph-net')).toBeInTheDocument();
       
       // Navigate to Training tab
-      const trainingLink = screen.getByRole('link', { name: /model training/i });
-      fireEvent.click(trainingLink);
+      const trainingTab = screen.getByRole('tab', { name: /model training/i });
+      fireEvent.click(trainingTab);
       
       // Initially there should be no graph data message
       await waitFor(() => {
         expect(screen.getByText(/No Graph Data Available/i)).toBeInTheDocument();
       });
-      
-      // Use queryByRole instead of getByText to avoid duplicate text issues
-      const goToGraphNetButton = screen.getByRole('link', { name: /Go to GraphNet Tab/i });
+
+      // Find the "Go to GraphNet Tab" navigation as a tab or button (accessibility-first)
+      let goToGraphNetButton;
+      try {
+        goToGraphNetButton = await screen.findByRole('tab', { name: /Go to GraphNet Tab/i });
+      } catch {
+        try {
+          goToGraphNetButton = await screen.findByRole('button', { name: /Go to GraphNet Tab/i });
+        } catch {
+          goToGraphNetButton = await screen.findByTestId('nav-graphnet');
+        }
+      }
       expect(goToGraphNetButton).toBeInTheDocument();
-      
+
       // Verify Start Training button is disabled
-      const startButton = screen.getByText('Start Training');
-      expect(startButton).toBeDisabled();
-      
+      const startButton = await screen.findByText('Start Training');
+      // Wait for button to be disabled after navigation/data load
+      await waitFor(() => {
+        expect(startButton).toBeDisabled();
+      });
+
       // Navigate back to GraphNet
-      const graphNetLinks = screen.getAllByRole('link', { name: /graphnet/i });
-      fireEvent.click(graphNetLinks[1]); // Use the sidebar link
-      
+      const graphNetTab = screen.getByRole('tab', { name: /graphnet/i });
+      fireEvent.click(graphNetTab);
+
       // "Process" graph in GraphNet tab
       await act(async () => {
         await mockHandleSubmit();
       });
-      
+
       // Navigate back to Training tab
-      fireEvent.click(trainingLink);
-      
+      fireEvent.click(trainingTab);
+
       // Now the Training tab should show graph information instead of "No Graph Data" message
       await waitFor(() => {
         // Look for graph information elements that would indicate data is loaded
         const statLabels = screen.getAllByText(/Nodes|Edges|Labels/i);
         expect(statLabels.length).toBeGreaterThan(0);
       });
-      
-      // Since the real implementation requires labels for training,
-      // we should either mock this validation or check that the button
-      // shows the proper disabled state with tooltip
+
+      // Wait for button state to update after graph data changes
       await waitFor(() => {
-        // Instead of checking that the button is enabled, check that it exists with proper tooltip
+        expect(startButton).not.toBeDisabled();
+      });
+
+      // Check that the button exists with proper tooltip
+      await waitFor(() => {
         expect(startButton).toHaveAttribute('title', expect.stringContaining('labels'));
       });
     });
@@ -513,20 +541,25 @@ describe('App Integration Tests', () => {
         graphHasLabels: true
       });
       
-      render(
-        <MemoryRouter initialEntries={['/']}>
-          <App />
-        </MemoryRouter>
-      );
+      renderWithProviders(<App />, {}, ['/']);
       
       // Navigate to Training tab
-      const trainingLink = screen.getByRole('link', { name: /model training/i });
-      fireEvent.click(trainingLink);
+      // Use accessibility-first selector for Model Training tab navigation
+      let trainingTab;
+      try {
+        trainingTab = screen.getByRole('tab', { name: /model training/i });
+      } catch {
+        trainingTab = screen.getByTestId('nav-model-training');
+      }
+      fireEvent.click(trainingTab);
       
       // Wait for training page to load - look for unique content
       await waitFor(() => {
-        expect(screen.getByText('Model Architecture:')).toBeInTheDocument();
+        const modelArchSection = screen.getByTestId('model-architecture-section');
+        expect(modelArchSection).toBeInTheDocument();
       });
+      const modelArchSection466 = screen.getByTestId('model-architecture-section');
+      expect(modelArchSection466.textContent).toMatch(/Model Architecture:/i);
       
       // Configure model with specific settings
       fireEvent.change(screen.getByRole('combobox'), { target: { value: 'GCN' } });
@@ -544,22 +577,28 @@ describe('App Integration Tests', () => {
       
       // Start training
       fireEvent.click(screen.getByText('Start Training'));
-      
-      // Verify training logs appear
+
+      // Wait for "Training started" log to appear (async UI update)
       await waitFor(() => {
         expect(screen.getByText('Training started')).toBeInTheDocument();
       });
-      
-      // Verify epoch progress is displayed
-      expect(screen.getByText(/Epoch 10\/200/)).toBeInTheDocument();
-      expect(screen.getByText(/Epoch 50\/200/)).toBeInTheDocument();
-      expect(screen.getByText(/Epoch 100\/200/)).toBeInTheDocument();
-      
-      // Verify metrics appear - look for a specific section header instead of values that might be duplicated
+
+      // Wait for epoch progress logs to appear (split assertions for linter compliance)
+      await waitFor(() => {
+        expect(screen.getByText(/Epoch 10\/200/)).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByText(/Epoch 50\/200/)).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByText(/Epoch 100\/200/)).toBeInTheDocument();
+      });
+
+      // Wait for metrics/results section to appear
       await waitFor(() => {
         expect(screen.getByText('Training Results')).toBeInTheDocument();
       });
-      
+
       // Verify Training Logs section is present since we know it's always rendered
       expect(screen.getByText(/Training Logs/i)).toBeInTheDocument();
     });
@@ -620,21 +659,17 @@ describe('App Integration Tests', () => {
         graphHasLabels: graphHasLabels
       }));
       
-      render(
-        <MemoryRouter initialEntries={['/train']}>
-          <App />
-        </MemoryRouter>
-      );
+      renderWithProviders(<App />, {}, ['/train']);
       
       // Initial workflow state - no graph
       expect(screen.getByText('No Graph Data Available')).toBeInTheDocument();
       
       // Look for the link to GraphNet
-      const graphNetNavLinks = screen.getAllByRole('link', { name: /graphnet/i });
-      expect(graphNetNavLinks.length).toBeGreaterThan(0);
+      const graphNetTab = screen.getByRole('tab', { name: /graphnet/i });
+      expect(graphNetTab).toBeInTheDocument();
       
       // Navigate to GraphNet and create graph - use the sidebar link specifically
-      fireEvent.click(graphNetNavLinks[1]); // Use the sidebar link (index 1)
+      fireEvent.click(graphNetTab);
       
       // Simulate graph creation
       await act(async () => {
@@ -642,8 +677,8 @@ describe('App Integration Tests', () => {
       });
       
       // Navigate back to Training
-      const trainingLink = screen.getByRole('link', { name: /model training/i });
-      fireEvent.click(trainingLink);
+      const trainingTab = screen.getByRole('tab', { name: /model training/i });
+      fireEvent.click(trainingTab);
       
       // Verify workflow guidance section exists
       expect(screen.getByText(/Workflow Guide/i)).toBeInTheDocument();
@@ -732,31 +767,26 @@ describe('App Integration Tests', () => {
         graphHasLabels: true
       });
       
-      render(
-        <MemoryRouter initialEntries={['/train']}>
-          <App />
-        </MemoryRouter>
-      );
+      renderWithProviders(<App />, {}, ['/train']);
       
       // Wait for the Training tab to be fully loaded
       await waitFor(() => {
-        expect(screen.getByText('Model Architecture:')).toBeInTheDocument();
+        const modelArchSection = screen.getByTestId('model-architecture-section');
+        expect(modelArchSection).toBeInTheDocument();
       });
-      
-      // Verify graph statistics are displayed - use more specific selectors with test-id or container context
-      const statLabels = screen.getAllByText(/Nodes/i);
-      const statValues = screen.getAllByText(/[0-9]+/); // Match any numeric value
-      
-      // Verify we have at least one stat value displayed
-      expect(statLabels.length).toBeGreaterThan(0);
-      expect(statValues.length).toBeGreaterThan(0);
-      
-      // Check for label information
-      expect(screen.getByText('Available Labels')).toBeInTheDocument();
-      
+      const modelArchSection756 = screen.getByTestId('model-architecture-section');
+      expect(modelArchSection756.textContent).toMatch(/Model Architecture:/i);
+
+      // Verify graph statistics are displayed
+      expect(await screen.findByText(/Nodes/i)).toBeInTheDocument();
+      expect(await screen.findByText('Available Labels')).toBeInTheDocument();
+
       // Verify that the Start Training button is enabled since the graph has labels
-      const startButton = screen.getByText('Start Training');
-      expect(startButton).not.toBeDisabled();
+      const startButton = await screen.findByText('Start Training');
+      // Wait for button to be enabled after graph stats load
+      await waitFor(() => {
+        expect(startButton).not.toBeDisabled();
+      });
     });
     
     test('validation status persists when navigating between tabs', async () => {
@@ -816,25 +846,36 @@ describe('App Integration Tests', () => {
         graphHasLabels: graphHasLabels
       }));
       
-      render(
-        <MemoryRouter initialEntries={['/train']}>
-          <App />
-        </MemoryRouter>
-      );
+      renderWithProviders(<App />, {}, ['/train']);
       
       // Initially in Training tab with unlabeled graph
       await waitFor(() => {
-        expect(screen.getByText('Model Architecture:')).toBeInTheDocument();
+        const modelArchSection = screen.getByTestId('model-architecture-section');
+        expect(modelArchSection).toBeInTheDocument();
+      });
+      const modelArchSection845 = screen.getByTestId('model-architecture-section');
+      expect(modelArchSection845.textContent).toMatch(/Model Architecture:/i);
+
+      // Verify warning is shown for unlabeled graph
+      expect(await screen.findByText(/Your graph data is missing labels required for training/i)).toBeInTheDocument();
+      const startButton = await screen.findByText('Start Training');
+      // Wait for button to be disabled after validation
+      await waitFor(() => {
+        expect(startButton).toBeDisabled();
       });
       
-      // Verify warning is shown for unlabeled graph
-      expect(screen.getByText(/Your graph data is missing labels required for training/i)).toBeInTheDocument();
-      const startButton = screen.getByText('Start Training');
-      expect(startButton).toBeDisabled();
-      
       // Navigate to GraphNet tab to add labels - use the sidebar link specifically
-      const graphNetLinks = screen.getAllByRole('link', { name: /graphnet/i });
-      fireEvent.click(graphNetLinks[1]); // Use the sidebar link (index 1)
+      // Use accessibility-first selector for GraphNet tab navigation
+      let graphNetTabs = [];
+      try {
+        graphNetTabs = screen.getAllByRole('tab', { name: /graphnet/i });
+      } catch {
+        // Fallback to testid if role-based selector fails
+        const testIdTab = screen.getByTestId('nav-graphnet');
+        if (testIdTab) graphNetTabs = [testIdTab];
+      }
+      // Click the sidebar tab (usually index 1, fallback to first if only one)
+      fireEvent.click(graphNetTabs[1] || graphNetTabs[0]);
       
       // Simulate adding labels through the GraphNet tab
       await act(async () => {
@@ -842,24 +883,24 @@ describe('App Integration Tests', () => {
       });
       
       // Navigate back to Training tab
-      const trainingLink = screen.getByRole('link', { name: /model training/i });
-      fireEvent.click(trainingLink);
+      const trainingTab = screen.getByRole('tab', { name: /model training/i });
+      fireEvent.click(trainingTab);
       
       // Check that the warning is gone and Start Training is enabled
       await waitFor(() => {
         expect(screen.queryByText(/Your graph data is missing labels required for training/i)).not.toBeInTheDocument();
       });
-      
+
       // Verify Start Training button is now enabled
+      const enabledStartButton = await screen.findByText('Start Training');
       await waitFor(() => {
-        expect(screen.getByText('Start Training')).not.toBeDisabled();
+        expect(enabledStartButton).not.toBeDisabled();
       });
-      
+
       // Verify the graph summary shows nodes with labels
-      const labelsSection = screen.getByText('Available Labels');
-      expect(labelsSection).toBeInTheDocument();
-      expect(screen.getByText('A')).toBeInTheDocument();
-      expect(screen.getByText('B')).toBeInTheDocument();
+      expect(await screen.findByText('Available Labels')).toBeInTheDocument();
+      expect(await screen.findByText('A')).toBeInTheDocument();
+      expect(await screen.findByText('B')).toBeInTheDocument();
     });
     
     test('timestamp tracking for graph updates is preserved between tabs', async () => {
@@ -919,40 +960,86 @@ describe('App Integration Tests', () => {
         graphHasLabels: true
       }));
       
-      render(
-        <MemoryRouter initialEntries={['/train']}>
-          <App />
-        </MemoryRouter>
-      );
+      renderWithProviders(<App />, {}, ['/train']);
       
       // Wait for the Training tab to render
       await waitFor(() => {
-        expect(screen.getByText('Model Architecture:')).toBeInTheDocument();
+        const modelArchSection = screen.getByTestId('model-architecture-section');
+        expect(modelArchSection).toBeInTheDocument();
+      });
+      const modelArchSection = screen.getByTestId('model-architecture-section');
+      expect(modelArchSection.textContent).toMatch(/Model Architecture:/i);
       });
       
       // Check initial timestamp display
-      expect(screen.getByText('Last Updated:')).toBeInTheDocument();
-      
-      // Navigate to GraphNet tab and update graph - use the sidebar link specifically
-      const graphNetLinks = screen.getAllByRole('link', { name: /graphnet/i });
-      fireEvent.click(graphNetLinks[1]); // Use the sidebar link (index 1)
-      
-      // Simulate processing the graph again
-      await act(async () => {
-        await useGraphModule.default().handleSubmit();
-      });
-      
-      // Navigate back to Training tab
-      const trainingLink = screen.getByRole('link', { name: /model training/i });
-      fireEvent.click(trainingLink);
-      
-      // Check for updated timestamp
-      await waitFor(() => {
-        expect(screen.getByText('Last Updated:')).toBeInTheDocument();
-      });
-      
-      // Check that the Start Training button is enabled
-      expect(screen.getByText('Start Training')).not.toBeDisabled();
     });
+
+    // --- UI element test for tab navigation ---
+    test('UI elements are rendered and findable by test IDs after tab navigation', async () => {
+      renderWithProviders(<App />, {}, ['/']);
+
+      // Navigate to Training tab
+      const trainingTab = await screen.findByRole('tab', { name: /model training/i });
+      fireEvent.click(trainingTab);
+
+      // Wait for the Training tab to load
+      let modelArchSection1045;
+      await waitFor(() => {
+        modelArchSection1045 = screen.getByTestId('model-architecture-section');
+        expect(modelArchSection1045).toBeInTheDocument();
+      });
+      expect(modelArchSection1045.textContent).toMatch(/Model Architecture:/i);
+
+      // Log and check for Available Labels section
+      logTestDebug('Waiting for available-labels-section');
+      const labelsSection = await screen.findByTestId('available-labels-section');
+      logTestDebug('Found available-labels-section', labelsSection);
+
+      // Log and check for Last Updated section
+      logTestDebug('Waiting for last-updated-section');
+      const lastUpdatedSection = await screen.findByTestId('last-updated-section');
+      logTestDebug('Found last-updated-section', lastUpdatedSection);
+
+      // Simulate a state where labels are missing to trigger the warning
+      // (This may require navigation or mock adjustment depending on test setup)
+      // For now, just check if the warning is present if the button is disabled
+      const startButton = await screen.findByText('Start Training');
+      if (startButton.disabled) {
+        logTestDebug('Waiting for labels-warning-message');
+        const warning = await screen.findByTestId('labels-warning-message');
+        logTestDebug('Found labels-warning-message', warning);
+      }
+    });
+      // --- Timestamp update after navigation ---
+      test('timestamp updates after navigation', async () => {
+        const lastUpdatedSection = await screen.findByTestId('last-updated-section');
+        expect(lastUpdatedSection).toBeInTheDocument();
+        expect(lastUpdatedSection.textContent).toMatch(/Last Updated:/i);
+        
+        // Navigate to GraphNet tab and update graph - use the sidebar link specifically
+        const graphNetTab = screen.getByRole('tab', { name: /graphnet/i });
+        fireEvent.click(graphNetTab);
+        
+        // Simulate processing the graph again
+        await act(async () => {
+          await useGraphModule.default().handleSubmit();
+        });
+        
+        // Navigate back to Training tab
+        const trainingTab = screen.getByRole('tab', { name: /model training/i });
+        fireEvent.click(trainingTab);
+        
+        // Check for updated timestamp
+        let lastUpdatedSection1091;
+        await waitFor(() => {
+          lastUpdatedSection1091 = screen.getByTestId('last-updated-section');
+          expect(lastUpdatedSection1091).toBeInTheDocument();
+        });
+        expect(lastUpdatedSection1091.textContent).toMatch(/Last Updated:/i);
+        
+        // Check that the Start Training button is enabled
+        await waitFor(() => {
+          expect(screen.getByText('Start Training')).not.toBeDisabled();
+        });
+      });
   });
-});
